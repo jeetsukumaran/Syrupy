@@ -35,11 +35,19 @@ import datetime
 
 if sys.platform == "darwin":
     FULL_MEM_SIZE = "rsz"
+    TRUE_COMMAND_PID_SELECTOR = 0 
 else:
     FULL_MEM_SIZE = "sz"
+    # on some systems, the subprocess.Popen launches a shell 
+    # which then launches the command, meaning that the PID of the 
+    # subprocess object is just that of the parent process running 
+    # the command; hence we have to select the correct process using
+    # its parent PID
+    TRUE_COMMAND_PID_SELECTOR = 1 
     
 PS_FIELDS = [
     'pid',
+    'ppid',
     'etime',
     '%cpu',
     '%mem',
@@ -95,7 +103,7 @@ def poll_process(pid=None,
     for row in stdout.split("\n"):
         if row:
             fields = re.split("\s+", row.strip(), non_command_cols)
-            if (pid is None or int(fields[0]) == pid) \
+            if (pid is None or int(fields[TRUE_COMMAND_PID_SELECTOR]) == pid) \
                 and (cmd_filter is None or re.match(cmd_filter, fields[-1])):
                     pinfo = {}
                     for idx, field in enumerate(fields):
@@ -182,10 +190,12 @@ def profile_command(command,
 
     start_time = datetime.datetime.now()
     while proc.poll() is None:
-        pinfo = poll_process(pid=proc.pid, debug=debug)[0]
-        result = output_separator.join(result_fields) % pinfo
-        output.write(result + "\n")
+        pinfoset = poll_process(pid=proc.pid, debug=debug)
+        for pinfo in pinfoset:
+            result = output_separator.join(result_fields) % pinfo
+            output.write(result + "\n")
         time.sleep(poll_interval)
+
     end_time = datetime.datetime.now()       
     
     return start_time, end_time
