@@ -62,7 +62,8 @@ PS_FIELD_HEADERS = {
 
         
 def poll_process(pid=None,
-                 cmd_filter=None):
+     cmd_filter=None,
+     debug=0):
     """
     Calls ps, and extracts rows where command matches given command
     filter. If no filter is given, all rows are extracted.
@@ -76,10 +77,14 @@ def poll_process(pid=None,
     # add the command fields = command + args
     # this field will probably have spaces: we'll take this
     # into account
-    PS_FIELDS.append("command")
+    ps_fields = PS_FIELDS + ["command"]
     
-    ps_args = [ '-o %s=""' % s for s in PS_FIELDS]
+    ps_args = [ '-o %s=""' % s for s in ps_fields]
     ps_invocation = "ps %s" % (" ".join(ps_args))
+    
+    if debug > 1:
+        sys.stderr.write("\n" + ps_invocation + "\n")
+    
     ps = subprocess.Popen(ps_invocation,
         shell=True,
         stdout=subprocess.PIPE)
@@ -94,7 +99,7 @@ def poll_process(pid=None,
                 and (cmd_filter is None or re.match(cmd_filter, fields[-1])):
                     pinfo = {}
                     for idx, field in enumerate(fields):
-                        pinfo[PS_FIELDS[idx]] = field
+                        pinfo[ps_fields[idx]] = field
                     pinfo['poll_datetime'] = poll_time.isoformat(' ')
                     pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
                     pinfo['poll_time'] = poll_time.strftime("%H:%M:%S.") + str(poll_time.microsecond)
@@ -109,7 +114,8 @@ def profile_command(command,
     poll_interval=1,
     output_separator=" ",
     align=False,    
-    headers=True):
+    headers=True,
+    debug=0):
     """
     Executes command `command`, redirecting its output stream to `command_stdout`
     and error stream to `command_stderr`. Polls the resulting process every
@@ -146,6 +152,9 @@ def profile_command(command,
         "%%(vsz)%ss" % right_align,
     ]    
     
+    if debug > 0:
+        result_fields.insert(0, "%%(pid)%ss" % right_align)
+    
     col_headers = [
         "DATE".ljust(wcolw),
         "TIME".ljust(wcolw),
@@ -156,6 +165,10 @@ def profile_command(command,
         "SZ".rjust(ncolw),
         "VSZ".rjust(ncolw)
     ]
+    
+    if debug > 0:
+        col_headers.insert(0, "PID".rjust(ncolw))
+        
     header_field_template = "%%%ss" % left_align
     col_headers = [header_field_template % col_head for col_head in col_headers]
 
@@ -169,7 +182,7 @@ def profile_command(command,
 
     start_time = datetime.datetime.now()
     while proc.poll() is None:
-        pinfo = poll_process(pid=proc.pid)[0]
+        pinfo = poll_process(pid=proc.pid, debug=debug)[0]
         result = output_separator.join(result_fields) % pinfo
         output.write(result + "\n")
         time.sleep(poll_interval)
@@ -243,6 +256,14 @@ def main():
         dest='quiet',
         default=False,
         help='do not report miscellaneous run information to stderr')         
+        
+    parser.add_option('--debug',
+        action='store',
+        type='int',
+        dest='debug',
+        metavar="#",
+        default=0,
+        help='debugging information level (0, 1, or 2; default=%default)')        
                 
     polling_opts = OptionGroup(parser, 'Polling Options')
     parser.add_option_group(polling_opts)
@@ -251,9 +272,9 @@ def main():
         action='store',
         dest='poll_interval',
         default=1,
-        metavar='SECONDS',
+        metavar='#.##',
         type=float,
-        help='polling interval (default=%default)')   
+        help='polling interval in seconds(default=%default)')   
                
     # output    
     
@@ -353,7 +374,8 @@ def main():
         poll_interval=opts.poll_interval,
         output_separator=opts.separator,
         align=opts.align,
-        headers=opts.headers)
+        headers=opts.headers,
+        debug=opts.debug)
         
     final_run_report = []            
     final_run_report.append(" Command: %s" % command)      
