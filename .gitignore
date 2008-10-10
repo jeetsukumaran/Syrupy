@@ -1,0 +1,9 @@
+*.pyc
+setup.cfg
+*.egg-info*
+.svn*
+.DS_Store*
+build/*
+dist/*
+setuptools-*.egg
+

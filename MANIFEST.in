@@ -1,0 +1,4 @@
+include AUTHORS.txt
+include COPYING.txt
+include README.txt
+include ez_setup.py
