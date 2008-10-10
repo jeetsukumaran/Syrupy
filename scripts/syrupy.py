@@ -107,7 +107,8 @@ def profile_command(command,
     command_stderr,
     output,
     poll_interval=1,
-    output_separator="\t",
+    output_separator=" ",
+    align=False,    
     headers=True):
     """
     Executes command `command`, redirecting its output stream to `command_stdout`
@@ -116,26 +117,50 @@ def profile_command(command,
     `output`. 
     """
     
+    NORM_COL_WIDTH = 10
+    WIDE_COL_WIDTH = 15
+    
+    if align:
+        ncolw = 8
+        wcolw = 15
+        right_align = "%d" % ncolw
+        right_align_wide = "%d" % wcolw
+        left_align = "-%d" % ncolw
+        left_align_wide = "-%d" % wcolw
+    else:   
+        ncolw = 0
+        wcolw = 0    
+        right_align = ""
+        right_align_wide = ""
+        left_align = ""
+        left_align_wide = ""
+    
     result_fields = [
-        "%(poll_date)s",
-        "%(poll_time)s",        
-        "%(etime)s",
-        "%(%cpu)s",
-        "%(%mem)s",
-        "%(rss)s",
-        "%%(%s)s" % FULL_MEM_SIZE,
-        "%(vsz)s"
+        "%%(poll_date)%ss" % left_align_wide,
+        "%%(poll_time)%ss" % left_align_wide,        
+        "%%(etime)%ss" % right_align,
+        "%%(%%cpu)%ss" % right_align,
+        "%%(%%mem)%ss" % right_align,
+        "%%(rss)%ss" % right_align,
+        "%%(%s)%ss" % (FULL_MEM_SIZE, right_align),
+        "%%(vsz)%ss" % right_align,
     ]    
+    
+    col_headers = [
+        "DATE".ljust(wcolw),
+        "TIME".ljust(wcolw),
+        "ELAPSED".rjust(ncolw),
+        "CPU".rjust(ncolw),
+        "MEM".rjust(ncolw),
+        "RSS".rjust(ncolw),
+        "SZ".rjust(ncolw),
+        "VSZ".rjust(ncolw)
+    ]
+    header_field_template = "%%%ss" % left_align
+    col_headers = [header_field_template % col_head for col_head in col_headers]
 
     if headers:
-        output.write(output_separator.join(["DATE",
-            "TIME",
-            "ELAPSED",
-            "CPU",
-            "MEM",
-            "RSS",
-            "SZ",
-            "VSZ"]) + "\n")
+        output.write(output_separator.join(col_headers) + "\n")
             
     proc = subprocess.Popen(command,
         shell=True,
@@ -287,15 +312,21 @@ def main():
     formatting_opts.add_option('--separator',
         action='store',
         dest='separator',
-        default="\t",
+        default=" ",
         metavar="SEPARATOR",
         help='character(s) to used to separate columns in results' )
 
+    formatting_opts.add_option('-a', '--align',
+        action='store_true',
+        dest='align',
+        default=False,
+        help='align fields' )
+        
     formatting_opts.add_option('--no-headers',
         action='store_false',
         dest='headers',
         default=True,
-        help='do not output column headers' )          
+        help='do not output column headers' ) 
 
     (opts, args) = parser.parse_args()
     
@@ -321,6 +352,7 @@ def main():
         output=output,
         poll_interval=opts.poll_interval,
         output_separator=opts.separator,
+        align=opts.align,
         headers=opts.headers)
         
     final_run_report = []            
