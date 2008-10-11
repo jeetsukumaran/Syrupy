@@ -265,9 +265,15 @@ def main():
         action='store_true',
         dest='quiet',
         default=False,
-        help='do not report miscellaneous run information to stderr')         
+        help='do not report miscellaneous run information to stderr')     
         
-    parser.add_option('--debug',
+    parser.add_option('-r', '--replace',
+        action='store_true',
+        dest='replace',
+        default=False,
+        help='replace output file(s) without asking if already exists')          
+        
+    parser.add_option('-v', '--debug',
         action='store',
         type='int',
         dest='debug',
@@ -275,7 +281,7 @@ def main():
         default=0,
         help='debugging information level (0, 1, or 2; default=%default)')        
                 
-    polling_opts = OptionGroup(parser, 'Polling Options')
+    polling_opts = OptionGroup(parser, 'Polling Regime')
     parser.add_option_group(polling_opts)
     
     polling_opts.add_option('-i', '--interval',
@@ -286,12 +292,10 @@ def main():
         type=float,
         help='polling interval in seconds(default=%default)')   
                
-    # output    
+    soutput_opts = OptionGroup(parser, 'Syrupy Output Destination')
+    parser.add_option_group(soutput_opts)    
     
-    output_opts = OptionGroup(parser, 'Output Destination Options')
-    parser.add_option_group(output_opts)    
-    
-    output_opts.add_option('-o', '--output',
+    soutput_opts.add_option('-o', '--output',
         action='store',
         dest='outputfile',
         default=None,
@@ -299,45 +303,51 @@ def main():
         help='write resource usage data to FILEPATH instead of ' \
             + 'standard output')     
         
-    output_opts.add_option('-l', '--logfile',
+    soutput_opts.add_option('-l', '--log',
         action='store',
         dest='logfile',
         default=None,
         metavar="FILEPATH",
-        help='save miscellaneous run information to this file')         
+        help='save miscellaneous run information to this file')       
         
-    output_opts.add_option('--stdout',
+    coutput_opts = OptionGroup(parser, 
+        'Command Output Destination',
+        """\
+By default the output and error streams of COMMAND is redirected to the
+system null device, because that is the way I want it most often; you
+can use these option to redirect either or both these
+streams to somewhere more useful. Note that if you choose to direct any of
+COMMAND's streams to the standard output (by specifying "^1" for the options
+below, you really hould then ask Syrupy to write its own output elsewhere
+using the "--output" and "--log" options, otherwise things can 
+get a little confusing.
+"""
+    )
+    parser.add_option_group(coutput_opts)           
+        
+    coutput_opts.add_option('--stdout',
         action='store',
         dest='stdout',
-        default="command.out",
-        metavar="FILEPATH [%default]",
-        help='redirect standard output stream of COMMAND to this file ('\
-            + 'default is "%d"; specify "^1" to write to stdout; if you this, you '\
-            + 'should also specify "--logfile" so as to keep the output of this ' \
-            + 'program separate from COMMAND)')
+        default=os.path.devnull,
+        metavar="FILEPATH",
+        help="""\
+path to file to direct standard output of COMMAND
+(default="%default"; use "^1" to specify current standard output
+or "^2" to specify current standard error)"""
+        )
             
-    output_opts.add_option('--stderr',
+    coutput_opts.add_option('--stderr',
         action='store',
         dest='stderr',
-        default="command.err",
+        default=os.path.devnull,
         metavar="FILEPATH",
-        help='redirect standard error stream of COMMAND to this file (use ' \
-            + '"^2" to redirect to stderr)')            
-                
-    output_opts.add_option('-r', '--replace',
-        action='store_true',
-        dest='replace',
-        default=False,
-        help='replace output file(s) without asking if already exists')        
-                                
-#     parser.add_option('--no-stdout',
-#         action='store_true',
-#         dest='no_stdout',
-#         default=False,
-#         help='do not display progress to standard out (only useful if ' \
-#             + '"--logfile" is also specified)' ) 
-            
-    formatting_opts = OptionGroup(parser, 'Output Formatting Options')
+        help="""\
+path to file to direct standard output of COMMAND
+(default="%default"; use "^1" to specify current standard output
+or "^2" to specify current standard error)"""
+        )
+                    
+    formatting_opts = OptionGroup(parser, 'Output Formatting')
     parser.add_option_group(formatting_opts)   
     
     formatting_opts.add_option('--separator',
