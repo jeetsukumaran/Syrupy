@@ -33,7 +33,7 @@ import sys
 import os
 import subprocess
 
-version = "1.0.1"
+version = "1.1.0"
 
 setup(name='Syrupy',
       version=version,     
@@ -55,8 +55,8 @@ System resource usage profiler""",
       # -*- Entry points: -*-
       """,      
       long_description="""\
-System resource usage profiler: executes a command and logs the CPU and
-memory usage of the resulting process at pre-specified intervals.""",
+System resource usage profiler: logs the CPU and
+memory usage of a process at pre-specified intervals.""",
       classifiers = [
             "Environment :: Console",
             "Intended Audience :: Developers",
