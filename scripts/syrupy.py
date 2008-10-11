@@ -57,7 +57,7 @@ PS_FIELD_HELP = [
     ],
     ["TIME",
     """
-    The actual time, given as HOUR:MINUTE:SECOND.MICROSECONDS that the
+    The actual time, given as HOUR:MINUTE:SECONDS that the
     process was polled."""
     ],
     ["ELAPSED",
@@ -171,7 +171,7 @@ def poll_process(pid=None,
                     pinfo[ps_fields[idx]] = field
                 pinfo['poll_datetime'] = poll_time.isoformat(' ')
                 pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
-                pinfo['poll_time'] = poll_time.strftime("%H:%M:%S.") + str(poll_time.microsecond)
+                pinfo['poll_time'] = poll_time.strftime("%H:%M:%S")
                 records.append(pinfo)
                 if debug_level >= 4:
                     sys.stderr.write(str(pinfo) + "\n")
@@ -185,7 +185,7 @@ def profile_process(pid=None,
     quit_if_none=False,
     quit_at_time=None,
     show_command=False,    
-    output_separator=" ",
+    output_separator="  ",
     align=False,
     headers=True,
     secondary_output=None,
@@ -209,21 +209,17 @@ def profile_process(pid=None,
     if align:
         ncolw = 5
         mcolw = 8
-        wcolw = 12
-        vcolw = 16
+        wcolw = 11
         right_align_narrow = "%d" % ncolw
         right_align = "%d" % mcolw
         right_align_wide = "%d" % wcolw
-        right_align_vwide = "%d" % vcolw
         left_align_narrow = "-%d" % ncolw
         left_align = "-%d" % mcolw
         left_align_wide = "-%d" % wcolw
-        left_align_vwide = "-%d" % vcolw
     else:
         ncolw = 0
         mcolw = 0
         wcolw = 0
-        vcolw = 0 
         right_align_narrow = ""
         right_align = ""
         right_align_wide = ""
@@ -234,7 +230,7 @@ def profile_process(pid=None,
     result_fields = [
         "%%(pid)%ss" % right_align,
         "%%(poll_date)%ss" % right_align_wide,
-        "%%(poll_time)%ss" % right_align_vwide,
+        "%%(poll_time)%ss" % right_align,
         "%%(etime)%ss" % right_align_wide,
         "%%(%%cpu)%ss" % right_align_narrow,
         "%%(%%mem)%ss" % right_align_narrow,
@@ -251,7 +247,7 @@ def profile_process(pid=None,
     col_headers = [
         "PID".rjust(mcolw),
         "DATE".rjust(wcolw),
-        "TIME".rjust(vcolw),
+        "TIME".rjust(mcolw),
         "ELAPSED".rjust(wcolw),
         "CPU".rjust(ncolw),
         "MEM".rjust(ncolw),
@@ -570,7 +566,7 @@ error"""
     formatting_opts.add_option('--separator',
         action='store',
         dest='separator',
-        default=" ",
+        default="  ",
         metavar="SEPARATOR",
         help='character(s) to used to separate columns in results' )
 
