@@ -35,15 +35,8 @@ import datetime
 
 if sys.platform == "darwin":
     FULL_MEM_SIZE = "rsz"
-    TRUE_COMMAND_PID_SELECTOR = 0 
 else:
     FULL_MEM_SIZE = "sz"
-    # on some systems, the subprocess.Popen launches a shell 
-    # which then launches the command, meaning that the PID of the 
-    # subprocess object is just that of the parent process running 
-    # the command; hence we have to select the correct process using
-    # its parent PID
-    TRUE_COMMAND_PID_SELECTOR = 1 
     
 PS_FIELDS = [
     'pid',
@@ -59,6 +52,7 @@ PS_FIELDS = [
 
 PS_FIELD_HEADERS = {
     'pid' : "Process ID",
+    'ppid' : "Parent Process ID",
     'etime' : "Elapsed Time",
     '%cpu' : "Percentage CPU",
     '%mem' : "Percentage Memory",
@@ -70,7 +64,7 @@ PS_FIELD_HEADERS = {
 
         
 def poll_process(pid=None,
-     cmd_filter=None,
+     ppid=None,
      debug=0):
     """
     Calls ps, and extracts rows where command matches given command
@@ -103,8 +97,9 @@ def poll_process(pid=None,
     for row in stdout.split("\n"):
         if row:
             fields = re.split("\s+", row.strip(), non_command_cols)
-            if (pid is None or int(fields[TRUE_COMMAND_PID_SELECTOR]) == pid) \
-                and (cmd_filter is None or re.match(cmd_filter, fields[-1])):
+            if (pid is None or int(fields[0]) == pid) \
+                and (ppid is None or int(fields[1]) == ppid):
+#                 and (cmd_filter is None or re.match(cmd_filter, fields[-1])):
                     pinfo = {}
                     for idx, field in enumerate(fields):
                         pinfo[ps_fields[idx]] = field
@@ -182,21 +177,26 @@ def profile_command(command,
 
     if headers:
         output.write(output_separator.join(col_headers) + "\n")
-            
-    proc = subprocess.Popen(command,
-        shell=True,
-        stdout=command_stdout,
-        stderr=command_stderr)
-
-    start_time = datetime.datetime.now()
-    while proc.poll() is None:
-        pinfoset = poll_process(pid=proc.pid, debug=debug)
-        for pinfo in pinfoset:
-            result = output_separator.join(result_fields) % pinfo
-            output.write(result + "\n")
-        time.sleep(poll_interval)
-
-    end_time = datetime.datetime.now()       
+   
+    try:
+        start_time = datetime.datetime.now()            
+        proc = subprocess.Popen(command.split(),
+            shell=False,
+            stdout=command_stdout,
+            stderr=command_stderr,
+            env=os.environ)    
+        pid = proc.pid            
+        while proc.poll() is None:
+            pinfoset = poll_process(pid=pid, ppid=None, debug=debug)
+            for pinfo in pinfoset:
+                result = output_separator.join(result_fields) % pinfo
+                output.write(result + "\n")
+            time.sleep(poll_interval)    
+        end_time = datetime.datetime.now() 
+    except OSError, oserror:
+        if oserror.errno == 2:
+            sys.stderr.write("Failed to execute command: %s\n" % command)
+            sys.exit(1)
     
     return start_time, end_time
     
