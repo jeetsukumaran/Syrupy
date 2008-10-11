@@ -125,7 +125,7 @@ def poll_process(pid=None,
     ps_fields = PS_FIELDS + ["command"]
 
     ps_args = [ '-o %s=""' % s for s in ps_fields]
-    ps_invocation = "ps -a -x %s" % (" ".join(ps_args))
+    ps_invocation = "ps -A %s" % (" ".join(ps_args))
 
     if debug_level >= 3:
         sys.stderr.write("\n" + ps_invocation + "\n")
