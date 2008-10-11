@@ -158,6 +158,8 @@ def profile_command(command,
     output_separator=" ",
     align=False,
     headers=True,
+    secondary_output=None,
+    flush_output=False,
     debug=0):
     """
     Executes command `command`, redirecting its output stream to `command_stdout`
@@ -221,6 +223,12 @@ def profile_command(command,
 
     if headers:
         output.write(output_separator.join(col_headers) + "\n")
+        if flush_output:
+            output.flush()
+        if secondary_output is not None:
+            secondary_output.write(output_separator.join(col_headers) + "\n")
+            if flush_output:
+                secondary_output.flush()
 
     try:
         start_time = datetime.datetime.now()
@@ -234,6 +242,12 @@ def profile_command(command,
             for pinfo in pinfoset:
                 result = output_separator.join(result_fields) % pinfo
                 output.write(result + "\n")
+                if flush_output:
+                    output.flush()                
+                if secondary_output is not None:
+                    secondary_output.write(result + "\n")  
+                    if flush_output:
+                        secondary_output.flush()                    
             time.sleep(poll_interval)
         end_time = datetime.datetime.now()
     except OSError, oserror:
@@ -352,16 +366,47 @@ def main():
         dest='outputfile',
         default=None,
         metavar="FILEPATH",
-        help='write resource usage data to FILEPATH instead of ' \
-            + 'standard output')
-
-    soutput_opts.add_option('-l', '--log',
+        help='write primary output (resource usage data) to FILEPATH instead ' \
+            + 'of standard output')
+            
+    soutput_opts.add_option('-1',
         action='store',
-        dest='logfile',
+        dest='outputfile',
         default=None,
         metavar="FILEPATH",
-        help='save miscellaneous run information to this file')
+        help='synonym for "-o" or "--output": write primary output (resource ' \
+            + 'usage data) to FILEPATH instead of standard output')            
+            
+    soutput_opts.add_option('-2',
+        action='store',
+        dest='secondary_stream_file',
+        default=None,
+        metavar="FILEPATH",
+        help='write secondary stream information to this file instead of '
+            + 'standard error')
+            
+    soutput_opts.add_option('--o2',
+        action='store_true',
+        dest='output_to_secondary',
+        default=False,
+        help='also write primary output to secondary stream (error stream)'
+            +'(this is useful if you are saving or redirecting the standard'
+            +' output to a file, but still want to see the results on the '
+            +' terminal, or vice versa')
 
+    soutput_opts.add_option('--m2',
+        action='store_true',
+        dest='miscellaneous_to_secondary',
+        default=False,
+        help='write miscellaneous run information (summary of times, etc.)'
+            +'to secondary stream')            
+            
+    soutput_opts.add_option('--flush-output',
+        action='store_true',
+        dest='flush_output',
+        default=False,
+        help='force flushing of stream buffers after every write')             
+                
     coutput_opts = OptionGroup(parser,
         'Command Output Destination',
         """\
@@ -454,10 +499,15 @@ error"""
         output = open_file(opts.outputfile, 'w', replace=opts.replace)
     else:
         output = sys.stdout
-    if opts.logfile is not None:
-        logfile = open_file(opts.logfile, 'w', replace=opts.replace)
+    if opts.secondary_stream_file is not None:
+        secondary_stream = open_file(opts.secondary_stream_file, 'w', replace=opts.replace)
     else:
-        logfile = None
+        secondary_stream = sys.stderr
+
+    if opts.output_to_secondary:
+        secondary_output = secondary_stream
+    else:
+        secondary_output = None
 
     start_time, end_time = profile_command(command=command,
         command_stdout=command_stdout,
@@ -467,23 +517,22 @@ error"""
         output_separator=opts.separator,
         align=opts.align,
         headers=opts.headers,
+        secondary_output=secondary_output,
+        flush_output=opts.flush_output,
         debug=opts.debug)
 
-    final_run_report = []
-    final_run_report.append(" Command: %s" % (" ".join(command)))
-    final_run_report.append("Began at: %s." % (start_time.isoformat(' ')))
-    final_run_report.append("Ended at: %s." % (end_time.isoformat(' ')))
-    hours, mins, secs = str(end_time-start_time).split(":")
-    run_time = "Run time: %s hour(s), %s minute(s), %s second(s)." % (hours, mins, secs)
-    final_run_report.append(run_time)
-
-    report = "\n".join(final_run_report) + "\n"
-    if not opts.quiet:
-        sys.stderr.write("---\n")
-        sys.stderr.write(report)
-        sys.stderr.write("---\n")
-    if logfile is not None:
-        logfile.write(report)
+    if opts.miscellaneous_to_secondary:
+        final_run_report = []
+        final_run_report.append(" Command: %s" % (" ".join(command)))
+        final_run_report.append("Began at: %s." % (start_time.isoformat(' ')))
+        final_run_report.append("Ended at: %s." % (end_time.isoformat(' ')))
+        hours, mins, secs = str(end_time-start_time).split(":")
+        run_time = "Run time: %s hour(s), %s minute(s), %s second(s)." % (hours, mins, secs)
+        final_run_report.append(run_time)        
+        report = "\n".join(final_run_report) + "\n"
+        secondary_stream.write("---\n")
+        secondary_stream.write(report)
+        secondary_stream.write("---\n")
 
 if __name__ == '__main__':
     main()

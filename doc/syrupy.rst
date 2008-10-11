@@ -106,7 +106,7 @@ Which will tell you that::
               includes the amount in RAM (the resident set size)
               as well as the amount in swap.
               
-Syrupy will continue taking and logging snapshots of the resource usage of the process until the processes terminates. When this happens, so does Syrupy, usually with a final report like::
+Syrupy will continue taking and logging snapshots of the resource usage of the process until the processes terminates. If you specify the "``--m2``" flag (the "write miscellaneous information to secondary [error] stream" flag), after termination of the process Syrupy will usually produce a final report like::
 
     ---
      Command: sumtrees.py ansonia_combo.aligned.fasta.trees
@@ -157,23 +157,31 @@ This can be achieved by the following options::
     
 "``^1``" and "``^2``" are special symbols that are interpreted by Syrupy to mean the standard output and standard error respectively.     
 
-If you do send the output stream of COMMAND to the standard output, you will probably find that this channel gets cluttered very quickly, as that is where, by default Syrupy writes *its* output. So you probably want to instruct Syrupy to write its own output elsewhere, using the "``--output``" option::
+If you do send the output stream of COMMAND to the standard output, you will probably find that this channel gets cluttered very quickly, as that is where, by default Syrupy writes *its* output. So you probably want to instruct Syrupy to write its own output elsewhere, using the "``-o``", "``--output``" or "``-1``" option (all these are synonyms for the channel which Syrupy will write its standard output)::
 
     $ syrupy.py --output="program.run" --stdout=^1 /bin/program
+    $ syrupy.py -o="program.run" --stdout=^1 /bin/program
+    $ syrupy.py -1="program.run" --stdout=^1 /bin/program    
 
 Similarly, you can redirect the standard error stream of Syrupy using::
 
-    $ syrupy.py --log="syrupy.log" --stderr-^2 /bin/program
+    $ syrupy.py -2="syrupy.log" --stderr-^2 /bin/program
     
 Of course, you can request Syrupy to redirect its streams to files without redirecting the streams of COMMAND anywhere in particular as well::
 
-    $ syrupy.py --output="program.run" --log="syrupy.log" /bin/program
+    $ syrupy.py --output="program.run" -2="syrupy.log" /bin/program
+    $ syrupy.py -o="program.run" -2="syrupy.log" /bin/program    
+    $ syrupy.py -1="program.run" -2="syrupy.log" /bin/program    
     
 You may also want to save the output and error stream of COMMAND, but not actually want to see them on the standard output. Then, instead of using the special symbols "``^1``" or "``^2``", you would simply supply proper file paths::
 
     $ syrupy.py --stdout=cmd.out --stderr=cmd.err /bin/program
     
-As a matter of convenience, you can use the "``--debug-command``" flag to have the error of COMMAND sent to the standard error::
+Another scenario is if you want to save the primary output of Syrupy to a file, but also have it displayed to the terminal as well. Using the "``--o2``" flag instructs Syrupy to write its primary output not only to the standard output stream (or file specified by the "``-o``", "``--output``" or "``-1``" options), but to the standard error (or file specified by the "``-2``" option)::
+
+    $ syrupy.py --o2 /bin/program
+        
+Finally, as a matter of convenience, you can use the "``--debug-command``" flag to have the error of COMMAND sent to the standard error::
 
     $ syrupy.py --debug-command /bin/program
     
@@ -181,13 +189,15 @@ This is exactly the same as::
 
     $ syrupy.py --stderr=^2 /bin/program
         
+To summarize: the "``--stdout``" and "``--stderr``" options set the destinations for the standard output and standard error streams of COMMAND (and by default are set to "``/dev/null``"), while the "``-1``" and "``-2``" options set the destinations for the standard output and standard error streams of Syrupy (and by default are set to the the shell standard out and standard error).
+        
 Formatting Output
 -----------------
 Syrupy's default output makes for easy visual inspection on a terminal or in a text editor.
 However, you might want to bring the results into a program like R for analysis.
 Some of these analysis programs are very picky about how fields are separated, requiring specific characters or strings to delimit columns.
 You can use the "``--separator``" flag to specify some other string or character to separate the fields, such as tabs or commas.
-Furthermore, by default Syrupy pads out each column with extra spaces so that they are all the same widht, thus getting them to line up on the screen or when viewed in a (monospace-font rendering) text-editor.
+Furthermore, by default Syrupy pads out each column with extra spaces so that they are all the same width, thus getting them to line up on the screen or when viewed in a (monospace-font rendering) text-editor.
 These extra spaces may confuse some other programs, and, if so, you can turn off the flushing or alignment of fields using the "``--no-align``" flag.
 Thus, for example, to produce plain-vanilla/no-frills comma-separated value (CSV) output you would enter::
 
