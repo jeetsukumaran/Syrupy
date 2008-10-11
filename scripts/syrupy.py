@@ -78,7 +78,7 @@ PS_FIELD_HELP = [
     The memory utilization of the process: ratio of the process's
     resident set size to the physical memory on the machine, expressed
     as a percentage."""
-    ],    
+    ],
     ["RSS",
     """
     Resident Set Size -- the non-swapped physical memory (RAM) that a
@@ -91,7 +91,7 @@ PS_FIELD_HELP = [
     Virtual memory Size -- the total amount of memory the
     process is currently using (in kiloBytes). This includes the amount
     in RAM (the resident set size) as well as the amount in swap."""
-    ],     
+    ],
 ]
 
 def column_help(keyword_width=10, total_width=70):
@@ -105,8 +105,8 @@ def column_help(keyword_width=10, total_width=70):
         help.append("%s%s" % \
             (entry[0].ljust(keyword_width),
             desc))
-    return '\n'.join(help)            
-       
+    return '\n'.join(help)
+
 def poll_process(pid=None,
      debug=0):
     """
@@ -118,24 +118,24 @@ def poll_process(pid=None,
     # we are relying on all these fields NOT to contain
     # any space; we'll use this fact to parse out columns
     non_command_cols = len(PS_FIELDS)
-    
+
     # add the command fields = command + args
     # this field will probably have spaces: we'll take this
     # into account
     ps_fields = PS_FIELDS + ["command"]
-    
+
     ps_args = [ '-o %s=""' % s for s in ps_fields]
     ps_invocation = "ps %s" % (" ".join(ps_args))
-    
+
     if debug > 2:
         sys.stderr.write("\n" + ps_invocation + "\n")
-    
+
     ps = subprocess.Popen(ps_invocation,
         shell=True,
         stdout=subprocess.PIPE)
-    poll_time = datetime.datetime.now()        
-    stdout = ps.communicate()[0] 
-    
+    poll_time = datetime.datetime.now()
+    stdout = ps.communicate()[0]
+
     records = []
     for row in stdout.split("\n"):
         if row:
@@ -149,27 +149,27 @@ def poll_process(pid=None,
                 pinfo['poll_time'] = poll_time.strftime("%H:%M:%S.") + str(poll_time.microsecond)
                 records.append(pinfo)
     return records
-    
-    
+
+
 def profile_command(command,
     command_stdout,
     command_stderr,
     output,
     poll_interval=1,
     output_separator=" ",
-    align=False,    
+    align=False,
     headers=True,
     debug=0):
     """
     Executes command `command`, redirecting its output stream to `command_stdout`
     and error stream to `command_stderr`. Polls the resulting process every
     `poll_interval` seconds, and writes the memory/cpu usage information to
-    `output`. 
+    `output`.
     """
-    
+
     NORM_COL_WIDTH = 10
     WIDE_COL_WIDTH = 15
-    
+
     if align:
         ncolw = 8
         wcolw = 15
@@ -177,30 +177,30 @@ def profile_command(command,
         right_align_wide = "%d" % wcolw
         left_align = "-%d" % ncolw
         left_align_wide = "-%d" % wcolw
-    else:   
+    else:
         ncolw = 0
-        wcolw = 0    
+        wcolw = 0
         right_align = ""
         right_align_wide = ""
         left_align = ""
         left_align_wide = ""
-    
+
     result_fields = [
         "%%(poll_date)%ss" % left_align_wide,
-        "%%(poll_time)%ss" % left_align_wide,        
+        "%%(poll_time)%ss" % left_align_wide,
         "%%(etime)%ss" % right_align,
         "%%(%%cpu)%ss" % right_align,
         "%%(%%mem)%ss" % right_align,
         "%%(rss)%ss" % right_align,
         "%%(vsz)%ss" % right_align,
-    ]    
-    
+    ]
+
     if debug > 0:
         result_fields.insert(0, "%%(pid)%ss" % right_align)
-        
+
     if debug > 1:
-        result_fields.insert(0, "%%(ppid)%ss" % right_align)     
-    
+        result_fields.insert(0, "%%(ppid)%ss" % right_align)
+
     col_headers = [
         "DATE".ljust(wcolw),
         "TIME".ljust(wcolw),
@@ -210,45 +210,45 @@ def profile_command(command,
         "RSS".rjust(ncolw),
         "VSIZE".rjust(ncolw)
     ]
-    
+
     if debug > 0:
         col_headers.insert(0, "PID".rjust(ncolw))
-        
+
     if debug > 1:
-        col_headers.insert(0, "PPID".rjust(ncolw))        
-        
+        col_headers.insert(0, "PPID".rjust(ncolw))
+
     header_field_template = "%%%ss" % left_align
     col_headers = [header_field_template % col_head for col_head in col_headers]
 
     if headers:
         output.write(output_separator.join(col_headers) + "\n")
-   
+
     try:
-        start_time = datetime.datetime.now()            
+        start_time = datetime.datetime.now()
         proc = subprocess.Popen(command,
             shell=False,
             stdout=command_stdout,
             stderr=command_stderr,
-            env=os.environ)           
+            env=os.environ)
         while proc.poll() is None:
             pinfoset = poll_process(pid=proc.pid, debug=debug)
             for pinfo in pinfoset:
                 result = output_separator.join(result_fields) % pinfo
                 output.write(result + "\n")
-            time.sleep(poll_interval)    
-        end_time = datetime.datetime.now() 
+            time.sleep(poll_interval)
+        end_time = datetime.datetime.now()
     except OSError, oserror:
         if oserror.errno == 2:
             sys.stderr.write("Failed to execute command: %s\n" % command)
             sys.exit(1)
-    
+
     return start_time, end_time
-    
+
 def open_file(fpath, mode='r', replace=False, exit_on_fail=True):
     """
     Does idiot-checked file opening.
     """
-    if fpath is None:        
+    if fpath is None:
         return None
     elif fpath == "^1":
         return sys.stdout
@@ -265,7 +265,7 @@ def open_file(fpath, mode='r', replace=False, exit_on_fail=True):
                     return None
             else:
                 return open(full_fpath, mode)
-        else:                
+        else:
             if os.path.exists(full_fpath):
                 if mode.count('a') or replace or full_fpath == os.path.devnull:
                     return open(full_fpath, mode)
@@ -283,15 +283,15 @@ def open_file(fpath, mode='r', replace=False, exit_on_fail=True):
             else:
                 return open(full_fpath, mode)
 
-_program_name = "Syrupy"                    
-_program_usage = '%prog [options] COMMAND'
+_program_name = "Syrupy"
+_program_usage = '%prog [SYRUPY-OPTIONS] COMMAND [COMMAND-OPTIONS] [COMMAND-ARGS]'
 _program_version = '%s Version 1.0.0' % _program_name
 _program_description = """\
-System resource usage profiler: executes "COMMAND", logging the CPU and
+System resource usage profiler: executes "COMMAND" with , logging the CPU and
 memory usage of the resulting process at pre-specified intervals. All
 dash-prefixed options following the first non-dash prefixed argument is assumed
 to be part of COMMAND and will be ignored by Syrupy. That is, only options
-before COMMAND will be parsed by Syrupy; everything else will be passed to 
+before COMMAND will be parsed by Syrupy; everything else will be passed to
 COMMAND.
 """
 _program_author = 'Jeet Sukumaran'
@@ -302,23 +302,23 @@ def main():
     Main CLI handler.
     """
 
-    parser = OptionParser(usage=_program_usage, 
-        add_help_option=True, 
-        version=_program_version, 
-        description=_program_description)  
-        
+    parser = OptionParser(usage=_program_usage,
+        add_help_option=True,
+        version=_program_version,
+        description=_program_description)
+
     parser.add_option('-q', '--quiet',
         action='store_true',
         dest='quiet',
         default=False,
-        help='do not report miscellaneous run information to stderr')     
-        
+        help='do not report miscellaneous run information to stderr')
+
     parser.add_option('-r', '--replace',
         action='store_true',
         dest='replace',
         default=False,
-        help='replace output file(s) without asking if already exists')          
-        
+        help='replace output file(s) without asking if already exists')
+
     parser.add_option('-v', '--debug-level',
         action='store',
         type='int',
@@ -326,44 +326,44 @@ def main():
         metavar="#",
         default=0,
         help='debugging information level (0, 1, 2, 3; default=%default)')
-        
+
     parser.add_option('--explain',
         action='store_true',
         dest='explain',
         default=False,
         help='show detailed information on the meaning of each of the columns, ' \
-            +'and then exit')         
-                
+            +'and then exit')
+
     polling_opts = OptionGroup(parser, 'Polling Regime')
     parser.add_option_group(polling_opts)
-    
+
     polling_opts.add_option('-i', '--interval',
         action='store',
         dest='poll_interval',
         default=1,
         metavar='#.##',
         type=float,
-        help='polling interval in seconds(default=%default)')   
-               
+        help='polling interval in seconds(default=%default)')
+
     soutput_opts = OptionGroup(parser, 'Syrupy Output Destination')
-    parser.add_option_group(soutput_opts)    
-    
+    parser.add_option_group(soutput_opts)
+
     soutput_opts.add_option('-o', '--output',
         action='store',
         dest='outputfile',
         default=None,
         metavar="FILEPATH",
         help='write resource usage data to FILEPATH instead of ' \
-            + 'standard output')     
-        
+            + 'standard output')
+
     soutput_opts.add_option('-l', '--log',
         action='store',
         dest='logfile',
         default=None,
         metavar="FILEPATH",
-        help='save miscellaneous run information to this file')       
-        
-    coutput_opts = OptionGroup(parser, 
+        help='save miscellaneous run information to this file')
+
+    coutput_opts = OptionGroup(parser,
         'Command Output Destination',
         """\
 By default the output and error streams of COMMAND is redirected to the
@@ -372,12 +372,12 @@ can use these option to redirect either or both these
 streams to somewhere more useful. Note that if you choose to direct any of
 COMMAND's streams to the standard output (by specifying "^1" for the options
 below, you really hould then ask Syrupy to write its own output elsewhere
-using the "--output" and "--log" options, otherwise things can 
+using the "--output" and "--log" options, otherwise things can
 get a little confusing.
 """
     )
-    parser.add_option_group(coutput_opts)           
-        
+    parser.add_option_group(coutput_opts)
+
     coutput_opts.add_option('--stdout',
         action='store',
         dest='stdout',
@@ -388,7 +388,7 @@ path to file to direct standard output of COMMAND
 (default="%default"; use "^1" to specify current standard output
 or "^2" to specify current standard error)"""
         )
-            
+
     coutput_opts.add_option('--stderr',
         action='store',
         dest='stderr',
@@ -399,7 +399,7 @@ path to file to direct standard output of COMMAND
 (default="%default"; use "^1" to specify current standard output
 or "^2" to specify current standard error)"""
         )
-        
+
     coutput_opts.add_option('--debug-command',
         action='store_const',
         dest='stderr',
@@ -408,11 +408,11 @@ or "^2" to specify current standard error)"""
 This directs the error stream of COMMAND to the standard error (i.e.,
 identical to "--stderr=^2"); useful to check if COMMAND is reporting an
 error"""
-        )        
-                    
+        )
+
     formatting_opts = OptionGroup(parser, 'Output Formatting')
-    parser.add_option_group(formatting_opts)   
-    
+    parser.add_option_group(formatting_opts)
+
     formatting_opts.add_option('--separator',
         action='store',
         dest='separator',
@@ -425,30 +425,30 @@ error"""
         dest='align',
         default=True,
         help='do not align/justify columns' )
-        
+
     formatting_opts.add_option('--no-headers',
         action='store_false',
         dest='headers',
         default=True,
-        help='do not output column headers' ) 
+        help='do not output column headers' )
 
 
     # we need to do this to prevent options meant for COMMAND
     # being consumed by Syrupy
     parser.disable_interspersed_args()
     (opts, args) = parser.parse_args()
-    
+
     if opts.explain:
         sys.stdout.write(column_help())
         sys.stdout.write("\n")
-        
+
         sys.exit(0)
-    
+
     if len(args) == 0:
         sys.stderr.write("Please supply a command to be executed.\n")
         sys.exit(1)
-        
-    command = args             
+
+    command = args
     command_stdout = open_file(opts.stdout, 'w', replace=opts.replace)
     command_stderr = open_file(opts.stderr, 'w', replace=opts.replace)
     if opts.outputfile is not None:
@@ -458,8 +458,8 @@ error"""
     if opts.logfile is not None:
         logfile = open_file(opts.logfile, 'w', replace=opts.replace)
     else:
-        logfile = None        
-          
+        logfile = None
+
     start_time, end_time = profile_command(command=command,
         command_stdout=command_stdout,
         command_stderr=command_stderr,
@@ -469,27 +469,27 @@ error"""
         align=opts.align,
         headers=opts.headers,
         debug=opts.debug)
-        
-    final_run_report = []            
-    final_run_report.append(" Command: %s" % (" ".join(command))) 
+
+    final_run_report = []
+    final_run_report.append(" Command: %s" % (" ".join(command)))
     final_run_report.append("Began at: %s." % (start_time.isoformat(' ')))
     final_run_report.append("Ended at: %s." % (end_time.isoformat(' ')))
     hours, mins, secs = str(end_time-start_time).split(":")
-    run_time = "Run time: %s hour(s), %s minute(s), %s second(s)." % (hours, mins, secs)    
+    run_time = "Run time: %s hour(s), %s minute(s), %s second(s)." % (hours, mins, secs)
     final_run_report.append(run_time)
 
     report = "\n".join(final_run_report) + "\n"
     if not opts.quiet:
         sys.stderr.write("---\n")
         sys.stderr.write(report)
-        sys.stderr.write("---\n")        
+        sys.stderr.write("---\n")
     if logfile is not None:
         logfile.write(report)
-    
+
 if __name__ == '__main__':
     main()
 
-    
+
 
 
 
