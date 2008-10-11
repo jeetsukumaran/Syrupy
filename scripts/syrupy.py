@@ -32,12 +32,8 @@ import time
 import sys
 import os
 import datetime
+import textwrap
 
-if sys.platform == "darwin":
-    FULL_MEM_SIZE = "rsz"
-else:
-    FULL_MEM_SIZE = "sz"
-    
 PS_FIELDS = [
     'pid',
     'ppid',
@@ -45,25 +41,73 @@ PS_FIELDS = [
     '%cpu',
     '%mem',
     'rss',
-    FULL_MEM_SIZE,
     'vsz',
     'command'
 ]
 
-PS_FIELD_HEADERS = {
-    'pid' : "Process ID",
-    'ppid' : "Parent Process ID",
-    'etime' : "Elapsed Time",
-    '%cpu' : "Percentage CPU",
-    '%mem' : "Percentage Memory",
-    'rss' : "Resident Set Size",
-    FULL_MEM_SIZE : "Core Image Size",
-    'vsz' : "Virtual Memory Usage",
-    'command' : "Command Executed"
-}
+PS_FIELD_HELP = [
+    ["PID",
+    """
+    Process IDentifier -- a number used by some operating system
+    kernels (such as that of UNIX, Mac OS X or Windows NT) to
+    uniquely identify a process."""
+    ],
+    ["DATE",
+    """
+    The calender date, given as YEAR-MONTH-DAY, that the process was
+    polled."""
+    ],
+    ["TIME",
+    """
+    The actual time, given as HOUR:MINUTE:SECOND.MICROSECONDS that the
+    process was polled."""
+    ],
+    ["ELAPSED",
+    """
+    The total time of the process had been running when it was polled.
+    """
+    ],
+    ["CPU",
+    """
+    The CPU utilization of the process: CPU time used divided by the
+    time the process has been running (cputime/realtime ratio),
+    expressed as a percentage."""
+    ],
+    ["MEM",
+    """
+    The memory utilization of the process: ratio of the process's
+    resident set size to the physical memory on the machine, expressed
+    as a percentage."""
+    ],    
+    ["RSS",
+    """
+    Resident Set Size -- the non-swapped physical memory (RAM) that a
+    process is occupying (in kiloBytes). The rest of the process memory
+    usage is in swap. If the computer has not used swap, this number
+    will be equal to VSIZE."""
+    ],
+    ["VSIZE",
+    """
+    Virtual memory Size -- the total amount of memory the
+    process is currently using (in kiloBytes). This includes the amount
+    in RAM (the resident set size) as well as the amount in swap."""
+    ],     
+]
+
+def column_help(keyword_width=10, total_width=70):
+    help = []
+    for entry in PS_FIELD_HELP:
+        desc = textwrap.dedent(re.sub("\s+", " ", entry[1]))
+        desc = textwrap.fill(desc,
+            width=total_width-keyword_width,
+            initial_indent='',
+            subsequent_indent=(' ' * keyword_width))
+        help.append("%s%s" % \
+            (entry[0].ljust(keyword_width),
+            desc))
+    return '\n'.join(help)            
        
 def poll_process(pid=None,
-     ppid=None,
      debug=0):
     """
     Calls ps, and extracts rows where command matches given command
@@ -96,16 +140,14 @@ def poll_process(pid=None,
     for row in stdout.split("\n"):
         if row:
             fields = re.split("\s+", row.strip(), non_command_cols)
-            if (pid is None or int(fields[0]) == pid) \
-                and (ppid is None or int(fields[1]) == ppid):
-#                 and (cmd_filter is None or re.match(cmd_filter, fields[-1])):
-                    pinfo = {}
-                    for idx, field in enumerate(fields):
-                        pinfo[ps_fields[idx]] = field
-                    pinfo['poll_datetime'] = poll_time.isoformat(' ')
-                    pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
-                    pinfo['poll_time'] = poll_time.strftime("%H:%M:%S.") + str(poll_time.microsecond)
-                    records.append(pinfo)
+            if (pid is None or int(fields[0]) == pid):
+                pinfo = {}
+                for idx, field in enumerate(fields):
+                    pinfo[ps_fields[idx]] = field
+                pinfo['poll_datetime'] = poll_time.isoformat(' ')
+                pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
+                pinfo['poll_time'] = poll_time.strftime("%H:%M:%S.") + str(poll_time.microsecond)
+                records.append(pinfo)
     return records
     
     
@@ -150,7 +192,6 @@ def profile_command(command,
         "%%(%%cpu)%ss" % right_align,
         "%%(%%mem)%ss" % right_align,
         "%%(rss)%ss" % right_align,
-        "%%(%s)%ss" % (FULL_MEM_SIZE, right_align),
         "%%(vsz)%ss" % right_align,
     ]    
     
@@ -167,8 +208,7 @@ def profile_command(command,
         "CPU".rjust(ncolw),
         "MEM".rjust(ncolw),
         "RSS".rjust(ncolw),
-        "SZ".rjust(ncolw),
-        "VSZ".rjust(ncolw)
+        "VSIZE".rjust(ncolw)
     ]
     
     if debug > 0:
@@ -390,7 +430,9 @@ or "^2" to specify current standard error)"""
     (opts, args) = parser.parse_args()
     
     if opts.explain:
-        sys.stdout.write("TODO")        
+        sys.stdout.write(column_help())
+        sys.stdout.write("\n")
+        
         sys.exit(0)
     
     if len(args) == 0:
