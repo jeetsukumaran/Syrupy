@@ -48,9 +48,8 @@ PS_FIELDS = [
 PS_FIELD_HELP = [
     ["PID",
     """
-    Process IDentifier -- a number used by some operating system
-    kernels (such as that of UNIX, Mac OS X or Windows NT) to
-    uniquely identify a process."""
+    Process IDentifier -- a number used by the operating system
+    kernel to uniquely identify a running program or process."""
     ],
     ["DATE",
     """
@@ -64,8 +63,8 @@ PS_FIELD_HELP = [
     ],
     ["ELAPSED",
     """
-    The total time of the process had been running when it was polled.
-    """
+    The total time that the process had been running up to the time it
+    was polled."""
     ],
     ["CPU",
     """
