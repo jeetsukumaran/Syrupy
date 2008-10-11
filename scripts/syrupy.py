@@ -410,11 +410,11 @@ or "^2" to specify current standard error)"""
         metavar="SEPARATOR",
         help='character(s) to used to separate columns in results' )
 
-    formatting_opts.add_option('-a', '--align',
-        action='store_true',
+    formatting_opts.add_option('--no-align',
+        action='store_false',
         dest='align',
-        default=False,
-        help='align fields' )
+        default=True,
+        help='do not align/justify columns' )
         
     formatting_opts.add_option('--no-headers',
         action='store_false',
