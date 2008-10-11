@@ -399,6 +399,16 @@ path to file to direct standard output of COMMAND
 (default="%default"; use "^1" to specify current standard output
 or "^2" to specify current standard error)"""
         )
+        
+    coutput_opts.add_option('--debug-command',
+        action='store_const',
+        dest='stderr',
+        const="^2",
+        help="""\
+This directs the error stream of COMMAND to the standard error (i.e.,
+identical to "--stderr=^2"); useful to check if COMMAND is reporting an
+error"""
+        )        
                     
     formatting_opts = OptionGroup(parser, 'Output Formatting')
     parser.add_option_group(formatting_opts)   
