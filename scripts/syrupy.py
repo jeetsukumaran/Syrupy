@@ -229,10 +229,9 @@ def profile_command(command,
             shell=False,
             stdout=command_stdout,
             stderr=command_stderr,
-            env=os.environ)    
-        pid = proc.pid            
+            env=os.environ)           
         while proc.poll() is None:
-            pinfoset = poll_process(pid=pid, ppid=None, debug=debug)
+            pinfoset = poll_process(pid=proc.pid, debug=debug)
             for pinfo in pinfoset:
                 result = output_separator.join(result_fields) % pinfo
                 output.write(result + "\n")
