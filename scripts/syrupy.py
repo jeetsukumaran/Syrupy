@@ -147,14 +147,17 @@ def poll_process(pid=None,
                 pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
                 pinfo['poll_time'] = poll_time.strftime("%H:%M:%S.") + str(poll_time.microsecond)
                 records.append(pinfo)
+                if debug > 3:
+                    sys.stderr.write(str(pinfo) + "\n")
     return records
 
 
-def profile_command(command,
-    command_stdout,
-    command_stderr,
+def profile_process(pid,
     output,
     poll_interval=1,
+    quit_poll_func=None,
+    quit_if_none=False,
+    quit_at_time=None,
     output_separator=" ",
     align=False,
     headers=True,
@@ -162,10 +165,14 @@ def profile_command(command,
     flush_output=False,
     debug=0):
     """
-    Executes command `command`, redirecting its output stream to `command_stdout`
-    and error stream to `command_stderr`. Polls the resulting process every
-    `poll_interval` seconds, and writes the memory/cpu usage information to
-    `output`.
+    Will poll process with PID `pid` ever `poll_interval` seconds,
+    writing system resource usage to `output`. Will quit if
+    `quit_poll_func` is not None and when called ("quit_poll_func()")
+    returns True. I f process with PID does not exist, will quit waiting
+    if `quit_if_none` is True, otherwise will continue until time given
+    by `quit_at_time` if `quit_at_time` is not None. If `quit_at_time`
+    is None and the PID does not exist and if `quit_if_none` is False,
+    then will poll continuously until interupted by user.
     """
 
     NORM_COL_WIDTH = 10
@@ -229,7 +236,44 @@ def profile_command(command,
             secondary_output.write(output_separator.join(col_headers) + "\n")
             if flush_output:
                 secondary_output.flush()
+                
+    quit = False                                    
+    while not quit:    
+        pinfoset = poll_process(pid=pid, debug=debug)
+        for pinfo in pinfoset:
+            result = output_separator.join(result_fields) % pinfo
+            output.write(result + "\n")
+            if flush_output:
+                output.flush()                
+            if secondary_output is not None:
+                secondary_output.write(result + "\n")  
+                if flush_output:
+                    secondary_output.flush()
+        if quit_poll_func is not None and quit_poll_func():
+            quit = True
+        elif len(pinfoset) == 0 and quit_if_none:
+            quit = True
+        else:            
+            time.sleep(poll_interval)                
+        
 
+def profile_command(command,
+    command_stdout,
+    command_stderr,
+    output,
+    poll_interval=1,
+    output_separator=" ",
+    align=False,
+    headers=True,
+    secondary_output=None,
+    flush_output=False,
+    debug=0):
+    """
+    Executes command `command`, redirecting its output stream to `command_stdout`
+    and error stream to `command_stderr`. Polls the resulting process every
+    `poll_interval` seconds, and writes the memory/cpu usage information to
+    `output`.
+    """
     try:
         start_time = datetime.datetime.now()
         proc = subprocess.Popen(command,
@@ -237,24 +281,23 @@ def profile_command(command,
             stdout=command_stdout,
             stderr=command_stderr,
             env=os.environ)
-        while proc.poll() is None:
-            pinfoset = poll_process(pid=proc.pid, debug=debug)
-            for pinfo in pinfoset:
-                result = output_separator.join(result_fields) % pinfo
-                output.write(result + "\n")
-                if flush_output:
-                    output.flush()                
-                if secondary_output is not None:
-                    secondary_output.write(result + "\n")  
-                    if flush_output:
-                        secondary_output.flush()                    
-            time.sleep(poll_interval)
+        profile_process(pid=proc.pid,
+            output=output,
+            poll_interval=poll_interval,
+            quit_poll_func=proc.poll,
+            quit_if_none=True,
+            quit_at_time=None,
+            output_separator=output_separator,
+            align=align,
+            headers=headers,
+            secondary_output=secondary_output,
+            flush_output=flush_output,
+            debug=debug)        
         end_time = datetime.datetime.now()
     except OSError, oserror:
         if oserror.errno == 2:
             sys.stderr.write("Failed to execute command: %s\n" % command)
             sys.exit(1)
-
     return start_time, end_time
 
 def open_file(fpath, mode='r', replace=False, exit_on_fail=True):
@@ -357,6 +400,15 @@ def main():
         metavar='#.##',
         type=float,
         help='polling interval in seconds(default=%default)')
+        
+    polling_opts.add_option('--poll-pid',
+        action='store',
+        dest='poll_pid',
+        default=None,
+        metavar='PID',
+        type=int,
+        help='ignore COMMAND (if given), and instead poll process with ' \
+            +'specified PID')        
 
     soutput_opts = OptionGroup(parser, 'Syrupy Output Destination')
     parser.add_option_group(soutput_opts)
