@@ -42,7 +42,6 @@ PS_FIELDS = [
     '%mem',
     'rss',
     'vsz',
-    'command'
 ]
 
 PS_FIELD_HELP = [
@@ -107,7 +106,9 @@ def column_help(keyword_width=10, total_width=70):
     return '\n'.join(help)
 
 def poll_process(pid=None,
-     debug=0):
+    command_pattern=None,
+    ignore_self=True,
+    debug_level=0):
     """
     Calls ps, and extracts rows where command matches given command
     filter. If no filter is given, all rows are extracted.
@@ -124,9 +125,9 @@ def poll_process(pid=None,
     ps_fields = PS_FIELDS + ["command"]
 
     ps_args = [ '-o %s=""' % s for s in ps_fields]
-    ps_invocation = "ps %s" % (" ".join(ps_args))
+    ps_invocation = "ps -a -x %s" % (" ".join(ps_args))
 
-    if debug > 2:
+    if debug_level >= 3:
         sys.stderr.write("\n" + ps_invocation + "\n")
 
     ps = subprocess.Popen(ps_invocation,
@@ -134,12 +135,37 @@ def poll_process(pid=None,
         stdout=subprocess.PIPE)
     poll_time = datetime.datetime.now()
     stdout = ps.communicate()[0]
+    
+    if debug_level >= 9:
+        sys.stderr.write(stdout + "\n")
 
     records = []
     for row in stdout.split("\n"):
         if row:
             fields = re.split("\s+", row.strip(), non_command_cols)
-            if (pid is None or int(fields[0]) == pid):
+            if debug_level >= 5:
+                sys.stderr.write(str(fields) + "\n")            
+#             
+#             if row.count("Python"):
+#                 print
+#                 print non_command_cols
+#                 print len(fields)
+#                 print len(ps_fields)
+#                 print ps_invocation
+#                 print "###########################################"
+#                 print "*******************************************"
+#                 print fields
+#                 print "*******************************************"
+#                 print row
+#                 print "-------------------------------------------"
+#                 print command_pattern
+#                 print fields[-1]
+#                 print re.match(command_pattern, fields[-1])        
+#                 print "-------------------------------------------"            
+                
+            if (not ignore_self or int(fields[0]) != os.getpid())  \
+                and (pid is None or int(fields[0]) == int(pid)) \
+                and (command_pattern is None or re.search(command_pattern, fields[-1])):
                 pinfo = {}
                 for idx, field in enumerate(fields):
                     pinfo[ps_fields[idx]] = field
@@ -147,91 +173,103 @@ def poll_process(pid=None,
                 pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
                 pinfo['poll_time'] = poll_time.strftime("%H:%M:%S.") + str(poll_time.microsecond)
                 records.append(pinfo)
-                if debug > 3:
+                if debug_level >= 4:
                     sys.stderr.write(str(pinfo) + "\n")
     return records
 
-
-def profile_process(pid,
-    output,
+def profile_process(pid=None,
+    command_pattern=None,
+    output=None,
     poll_interval=1,
     quit_poll_func=None,
     quit_if_none=False,
     quit_at_time=None,
+    show_command=False,    
     output_separator=" ",
     align=False,
     headers=True,
     secondary_output=None,
     flush_output=False,
-    debug=0):
+    debug_level=0):
     """
-    Will poll process with PID `pid` ever `poll_interval` seconds,
-    writing system resource usage to `output`. Will quit if
-    `quit_poll_func` is not None and when called ("quit_poll_func()")
-    returns True. I f process with PID does not exist, will quit waiting
-    if `quit_if_none` is True, otherwise will continue until time given
-    by `quit_at_time` if `quit_at_time` is not None. If `quit_at_time`
-    is None and the PID does not exist and if `quit_if_none` is False,
-    then will poll continuously until interupted by user.
+    Will poll process with PID `pid` or with COMMAND matching
+    `command_pattern` every `poll_interval` seconds, writing system
+    resource usage to `output`. Will quit if `quit_poll_func` is not
+    None and when called ("quit_poll_func()") returns True. I f process
+    with PID does not exist, will quit waiting if `quit_if_none` is
+    True, otherwise will continue until time given by `quit_at_time` if
+    `quit_at_time` is not None. If `quit_at_time` is None and the PID
+    does not exist and if `quit_if_none` is False, then will poll
+    continuously until interupted by user.
     """
-
-    NORM_COL_WIDTH = 10
-    WIDE_COL_WIDTH = 15
+    
+    if pid is None and command_pattern is None:
+        raise Exception("Must provide either PID or command pattern")
 
     if align:
-        ncolw = 8
-        wcolw = 15
-        right_align = "%d" % ncolw
+        ncolw = 5
+        mcolw = 8
+        wcolw = 12
+        vcolw = 16
+        right_align_narrow = "%d" % ncolw
+        right_align = "%d" % mcolw
         right_align_wide = "%d" % wcolw
-        left_align = "-%d" % ncolw
+        right_align_vwide = "%d" % vcolw
+        left_align_narrow = "-%d" % ncolw
+        left_align = "-%d" % mcolw
         left_align_wide = "-%d" % wcolw
+        left_align_vwide = "-%d" % vcolw
     else:
         ncolw = 0
+        mcolw = 0
         wcolw = 0
+        vcolw = 0 
+        right_align_narrow = ""
         right_align = ""
         right_align_wide = ""
+        left_align_narrow = ""
         left_align = ""
         left_align_wide = ""
 
     result_fields = [
-        "%%(poll_date)%ss" % left_align_wide,
-        "%%(poll_time)%ss" % left_align_wide,
-        "%%(etime)%ss" % right_align,
-        "%%(%%cpu)%ss" % right_align,
-        "%%(%%mem)%ss" % right_align,
+        "%%(pid)%ss" % right_align,
+        "%%(poll_date)%ss" % right_align_wide,
+        "%%(poll_time)%ss" % right_align_vwide,
+        "%%(etime)%ss" % right_align_wide,
+        "%%(%%cpu)%ss" % right_align_narrow,
+        "%%(%%mem)%ss" % right_align_narrow,
         "%%(rss)%ss" % right_align,
         "%%(vsz)%ss" % right_align,
     ]
 
-    if debug > 0:
-        result_fields.insert(0, "%%(pid)%ss" % right_align)
-
-    if debug > 1:
+    if debug_level >= 1:
         result_fields.insert(0, "%%(ppid)%ss" % right_align)
+        
+    if show_command:
+        result_fields.append("%(command)s")        
 
     col_headers = [
-        "DATE".ljust(wcolw),
-        "TIME".ljust(wcolw),
-        "ELAPSED".rjust(ncolw),
+        "PID".rjust(mcolw),
+        "DATE".rjust(wcolw),
+        "TIME".rjust(vcolw),
+        "ELAPSED".rjust(wcolw),
         "CPU".rjust(ncolw),
         "MEM".rjust(ncolw),
-        "RSS".rjust(ncolw),
-        "VSIZE".rjust(ncolw)
+        "RSS".rjust(mcolw),
+        "VSIZE".rjust(mcolw)
     ]
 
-    if debug > 0:
-        col_headers.insert(0, "PID".rjust(ncolw))
-
-    if debug > 1:
-        col_headers.insert(0, "PPID".rjust(ncolw))
-
-    header_field_template = "%%%ss" % left_align
-    col_headers = [header_field_template % col_head for col_head in col_headers]
-
+    if debug_level >=1:
+        col_headers.insert(0, "PPID".rjust(mcolw))
+        
+    if show_command:
+        col_headers.append("COMMAND")
+       
     if headers:
-        output.write(output_separator.join(col_headers) + "\n")
-        if flush_output:
-            output.flush()
+        if output is not None:
+            output.write(output_separator.join(col_headers) + "\n")
+            if flush_output:
+                output.flush()
         if secondary_output is not None:
             secondary_output.write(output_separator.join(col_headers) + "\n")
             if flush_output:
@@ -239,12 +277,17 @@ def profile_process(pid,
                 
     quit = False                                    
     while not quit:    
-        pinfoset = poll_process(pid=pid, debug=debug)
+        pinfoset = poll_process(pid=pid, 
+                                command_pattern=command_pattern, 
+                                debug_level=debug_level)
+        if debug_level > 4:
+            sys.stderr.write(str(pinfoset) + "\n")
         for pinfo in pinfoset:
             result = output_separator.join(result_fields) % pinfo
-            output.write(result + "\n")
-            if flush_output:
-                output.flush()                
+            if output is not None:
+                output.write(result + "\n")
+                if flush_output:
+                    output.flush()                
             if secondary_output is not None:
                 secondary_output.write(result + "\n")  
                 if flush_output:
@@ -256,18 +299,18 @@ def profile_process(pid,
         else:            
             time.sleep(poll_interval)                
         
-
 def profile_command(command,
     command_stdout,
     command_stderr,
     output,
     poll_interval=1,
     output_separator=" ",
+    show_command=False,    
     align=False,
     headers=True,
     secondary_output=None,
     flush_output=False,
-    debug=0):
+    debug_level=0):
     """
     Executes command `command`, redirecting its output stream to `command_stdout`
     and error stream to `command_stderr`. Polls the resulting process every
@@ -287,12 +330,13 @@ def profile_command(command,
             quit_poll_func=proc.poll,
             quit_if_none=True,
             quit_at_time=None,
+            show_command=show_command,
             output_separator=output_separator,
             align=align,
             headers=headers,
             secondary_output=secondary_output,
             flush_output=flush_output,
-            debug=debug)        
+            debug_level=debug_level)        
         end_time = datetime.datetime.now()
     except OSError, oserror:
         if oserror.errno == 2:
@@ -401,14 +445,22 @@ def main():
         type=float,
         help='polling interval in seconds(default=%default)')
         
-    polling_opts.add_option('--poll-pid',
+    polling_opts.add_option('-p', '--poll-pid',
         action='store',
         dest='poll_pid',
         default=None,
         metavar='PID',
         type=int,
-        help='ignore COMMAND (if given), and instead poll process with ' \
+        help='ignore COMMAND if given, and poll external process with ' \
             +'specified PID')        
+            
+    polling_opts.add_option('-c', '--poll-command',
+        action='store',
+        dest='poll_command',
+        default=None,
+        metavar='REG-EXP',
+        help='ignore COMMAND if given, and poll external process with ' \
+            +'command matching specified regular expression pattern')               
 
     soutput_opts = OptionGroup(parser, 'Syrupy Output Destination')
     parser.add_option_group(soutput_opts)
@@ -508,6 +560,12 @@ error"""
 
     formatting_opts = OptionGroup(parser, 'Output Formatting')
     parser.add_option_group(formatting_opts)
+    
+    formatting_opts.add_option('--show-command',
+        action='store_true',
+        dest='show_command',
+        default=False,
+        help='show command column in output' )    
 
     formatting_opts.add_option('--separator',
         action='store',
@@ -537,16 +595,14 @@ error"""
     if opts.explain:
         sys.stdout.write(column_help())
         sys.stdout.write("\n")
-
         sys.exit(0)
 
-    if len(args) == 0:
-        sys.stderr.write("Please supply a command to be executed.\n")
+    if len(args) == 0 \
+        and opts.poll_pid is None \
+        and opts.poll_command is None:
+        parser.print_usage()
         sys.exit(1)
 
-    command = args
-    command_stdout = open_file(opts.stdout, 'w', replace=opts.replace)
-    command_stderr = open_file(opts.stderr, 'w', replace=opts.replace)
     if opts.outputfile is not None:
         output = open_file(opts.outputfile, 'w', replace=opts.replace)
     else:
@@ -560,31 +616,50 @@ error"""
         secondary_output = secondary_stream
     else:
         secondary_output = None
-
-    start_time, end_time = profile_command(command=command,
-        command_stdout=command_stdout,
-        command_stderr=command_stderr,
-        output=output,
-        poll_interval=opts.poll_interval,
-        output_separator=opts.separator,
-        align=opts.align,
-        headers=opts.headers,
-        secondary_output=secondary_output,
-        flush_output=opts.flush_output,
-        debug=opts.debug)
-
-    if opts.miscellaneous_to_secondary:
-        final_run_report = []
-        final_run_report.append(" Command: %s" % (" ".join(command)))
-        final_run_report.append("Began at: %s." % (start_time.isoformat(' ')))
-        final_run_report.append("Ended at: %s." % (end_time.isoformat(' ')))
-        hours, mins, secs = str(end_time-start_time).split(":")
-        run_time = "Run time: %s hour(s), %s minute(s), %s second(s)." % (hours, mins, secs)
-        final_run_report.append(run_time)        
-        report = "\n".join(final_run_report) + "\n"
-        secondary_stream.write("---\n")
-        secondary_stream.write(report)
-        secondary_stream.write("---\n")
+    
+    if opts.poll_pid is not None or opts.poll_command is not None:
+        profile_process(pid=opts.poll_pid,            
+            command_pattern=opts.poll_command,
+            output=output,
+            poll_interval=opts.poll_interval,
+            quit_poll_func=None,
+            quit_if_none=True,
+            quit_at_time=None,
+            show_command=opts.show_command,
+            output_separator=opts.separator,
+            align=opts.align,
+            headers=opts.headers,
+            secondary_output=secondary_output,
+            flush_output=opts.flush_output,
+            debug_level=opts.debug) 
+    else:        
+        command = args
+        command_stdout = open_file(opts.stdout, 'w', replace=opts.replace)
+        command_stderr = open_file(opts.stderr, 'w', replace=opts.replace)    
+        start_time, end_time = profile_command(command=command,
+            command_stdout=command_stdout,
+            command_stderr=command_stderr,
+            output=output,
+            poll_interval=opts.poll_interval,
+            show_command=opts.show_command,            
+            output_separator=opts.separator,
+            align=opts.align,
+            headers=opts.headers,
+            secondary_output=secondary_output,
+            flush_output=opts.flush_output,
+            debug_level=opts.debug)
+        if opts.miscellaneous_to_secondary:
+            final_run_report = []
+            final_run_report.append(" Command: %s" % (" ".join(command)))
+            final_run_report.append("Began at: %s." % (start_time.isoformat(' ')))
+            final_run_report.append("Ended at: %s." % (end_time.isoformat(' ')))
+            hours, mins, secs = str(end_time-start_time).split(":")
+            run_time = "Run time: %s hour(s), %s minute(s), %s second(s)." % (hours, mins, secs)
+            final_run_report.append(run_time)        
+            report = "\n".join(final_run_report) + "\n"
+            secondary_stream.write("---\n")
+            secondary_stream.write(report)
+            secondary_stream.write("---\n")
 
 if __name__ == '__main__':
     main()
