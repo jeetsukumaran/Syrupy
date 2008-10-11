@@ -7,8 +7,8 @@ Syrupy is a Python script to dynamically profile the resource (especially memory
 Syrupy works by executing a command (which can be any arbitrarily-complex combination of programs and arguments that can be invoked in a terminal), and then monitoring the resource usage of the resulting process through repeated calls to the system command "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)>`_".
 
 
-Prequisites
-===========
+Prerequisites
+=============
 
 Given that Syrupy is nothing more than a glorifed wrapper and parser of "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)>`_", naturally the most important precondition for Syrupy to work on your system is to have the "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)>`_" command available. This is almost certainly found in all POSIX or mostly POSIX-compliant systems, including various flavors of UNIX, Linux's, Apple Mac OS X's etc. 
 
