@@ -380,15 +380,18 @@ def open_file(fpath, mode='r', replace=False, exit_on_fail=True):
                 return open(full_fpath, mode)
 
 _program_name = "Syrupy"
-_program_usage = '%prog [SYRUPY-OPTIONS] COMMAND [COMMAND-OPTIONS] [COMMAND-ARGS]'
+_program_usage = '%prog [SYRUPY-OPTIONS] [COMMAND [COMMAND-OPTIONS] [COMMAND-ARGS]]'
 _program_version = '%s Version 1.0.0' % _program_name
 _program_description = """\
-System resource usage profiler: executes "COMMAND" with , logging the CPU and
-memory usage of the resulting process at pre-specified intervals. All
-dash-prefixed options following the first non-dash prefixed argument is assumed
-to be part of COMMAND and will be ignored by Syrupy. That is, only options
-before COMMAND will be parsed by Syrupy; everything else will be passed to
-COMMAND.
+System resource usage profiler: executes "COMMAND" with given
+options/arguments and tracks resulting process, or tracks other running
+processes based on criteria specified in SYRUPY-OPTIONS. In either case,
+the CPU and memory usage of the tracked processes are sampled and logged
+at pre-specified intervals. Note that, if COMMAND is given, then all
+dash-prefixed options following the first non-dash prefixed argument are
+assumed to be part of COMMAND and will be ignored by Syrupy. That is,
+only options before COMMAND will be parsed by Syrupy; everything else
+will be passed to COMMAND.
 """
 _program_author = 'Jeet Sukumaran'
 _program_copyright = 'Copyright (C) 2008 Jeet Sukumaran.'
@@ -429,6 +432,39 @@ def main():
         default=False,
         help='show detailed information on the meaning of each of the columns, ' \
             +'and then exit')
+            
+    process_opts = OptionGroup(parser, 'Process Selection', """\
+By default, Syrupy tracks the process resulting from executing
+COMMAND. You can also instruct Syrupy to track external
+processes by using the following options, each of which specify
+a criteria that a particular process must meet so as to be
+monitored. Syrupy will report the resource usage of any and all
+processes that meet the specified criteria, and will exit when
+no processes matching all the criteria are found. If no
+processes matching all the criteria are actually already running
+when Syrupy starts, then Syrupy exits immediately. Note that an
+instance of Syrupy automatically excludes its own process from
+being tracked by itself.                
+        """
+        )
+    parser.add_option_group(process_opts)            
+    
+    process_opts.add_option('-p', '--poll-pid',
+        action='store',
+        dest='poll_pid',
+        default=None,
+        metavar='PID',
+        type=int,
+        help='ignore COMMAND if given, and poll external process with ' \
+            +'specified PID')        
+            
+    process_opts.add_option('-c', '--poll-command',
+        action='store',
+        dest='poll_command',
+        default=None,
+        metavar='REG-EXP',
+        help='ignore COMMAND if given, and poll external process with ' \
+            +'command matching specified regular expression pattern')        
 
     polling_opts = OptionGroup(parser, 'Polling Regime')
     parser.add_option_group(polling_opts)
@@ -440,24 +476,7 @@ def main():
         metavar='#.##',
         type=float,
         help='polling interval in seconds(default=%default)')
-        
-    polling_opts.add_option('-p', '--poll-pid',
-        action='store',
-        dest='poll_pid',
-        default=None,
-        metavar='PID',
-        type=int,
-        help='ignore COMMAND if given, and poll external process with ' \
-            +'specified PID')        
-            
-    polling_opts.add_option('-c', '--poll-command',
-        action='store',
-        dest='poll_command',
-        default=None,
-        metavar='REG-EXP',
-        help='ignore COMMAND if given, and poll external process with ' \
-            +'command matching specified regular expression pattern')               
-
+                   
     soutput_opts = OptionGroup(parser, 'Syrupy Output Destination')
     parser.add_option_group(soutput_opts)
 
