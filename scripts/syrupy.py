@@ -61,8 +61,7 @@ PS_FIELD_HEADERS = {
     'vsz' : "Virtual Memory Usage",
     'command' : "Command Executed"
 }
-
-        
+       
 def poll_process(pid=None,
      ppid=None,
      debug=0):
@@ -84,7 +83,7 @@ def poll_process(pid=None,
     ps_args = [ '-o %s=""' % s for s in ps_fields]
     ps_invocation = "ps %s" % (" ".join(ps_args))
     
-    if debug > 1:
+    if debug > 2:
         sys.stderr.write("\n" + ps_invocation + "\n")
     
     ps = subprocess.Popen(ps_invocation,
@@ -157,6 +156,9 @@ def profile_command(command,
     
     if debug > 0:
         result_fields.insert(0, "%%(pid)%ss" % right_align)
+        
+    if debug > 1:
+        result_fields.insert(0, "%%(ppid)%ss" % right_align)     
     
     col_headers = [
         "DATE".ljust(wcolw),
@@ -172,6 +174,9 @@ def profile_command(command,
     if debug > 0:
         col_headers.insert(0, "PID".rjust(ncolw))
         
+    if debug > 1:
+        col_headers.insert(0, "PPID".rjust(ncolw))        
+        
     header_field_template = "%%%ss" % left_align
     col_headers = [header_field_template % col_head for col_head in col_headers]
 
@@ -180,7 +185,7 @@ def profile_command(command,
    
     try:
         start_time = datetime.datetime.now()            
-        proc = subprocess.Popen(command.split(),
+        proc = subprocess.Popen(command,
             shell=False,
             stdout=command_stdout,
             stderr=command_stderr,
@@ -240,13 +245,15 @@ def open_file(fpath, mode='r', replace=False, exit_on_fail=True):
                 return open(full_fpath, mode)
 
 _program_name = "Syrupy"                    
-_program_usage = '%prog [options] "COMMAND"'
+_program_usage = '%prog [options] COMMAND'
 _program_version = '%s Version 1.0.0' % _program_name
 _program_description = """\
 System resource usage profiler: executes "COMMAND", logging the CPU and
-memory usage of the resulting process at pre-specified intervals. To 
-prevent any confusion regarding to which program command-line options should 
-be applied (i.e., Syrupy or COMMAND), COMMAND should be wrapped in quotes.
+memory usage of the resulting process at pre-specified intervals. All
+dash-prefixed options following the first non-dash prefixed argument is assumed
+to be part of COMMAND and will be ignored by Syrupy. That is, only options
+before COMMAND will be parsed by Syrupy; everything else will be passed to 
+COMMAND.
 """
 _program_author = 'Jeet Sukumaran'
 _program_copyright = 'Copyright (C) 2008 Jeet Sukumaran.'
@@ -273,13 +280,20 @@ def main():
         default=False,
         help='replace output file(s) without asking if already exists')          
         
-    parser.add_option('-v', '--debug',
+    parser.add_option('-v', '--debug-level',
         action='store',
         type='int',
         dest='debug',
         metavar="#",
         default=0,
-        help='debugging information level (0, 1, or 2; default=%default)')        
+        help='debugging information level (0, 1, 2, 3; default=%default)')
+        
+    parser.add_option('--explain',
+        action='store_true',
+        dest='explain',
+        default=False,
+        help='show detailed information on the meaning of each of the columns, ' \
+            +'and then exit')         
                 
     polling_opts = OptionGroup(parser, 'Polling Regime')
     parser.add_option_group(polling_opts)
@@ -369,13 +383,21 @@ or "^2" to specify current standard error)"""
         default=True,
         help='do not output column headers' ) 
 
+
+    # we need to do this to prevent options meant for COMMAND
+    # being consumed by Syrupy
+    parser.disable_interspersed_args()
     (opts, args) = parser.parse_args()
+    
+    if opts.explain:
+        sys.stdout.write("TODO")        
+        sys.exit(0)
     
     if len(args) == 0:
         sys.stderr.write("Please supply a command to be executed.\n")
         sys.exit(1)
-    
-    command = " ".join(args)
+        
+    command = args             
     command_stdout = open_file(opts.stdout, 'w', replace=opts.replace)
     command_stderr = open_file(opts.stderr, 'w', replace=opts.replace)
     if opts.outputfile is not None:
@@ -398,7 +420,7 @@ or "^2" to specify current standard error)"""
         debug=opts.debug)
         
     final_run_report = []            
-    final_run_report.append(" Command: %s" % command)      
+    final_run_report.append(" Command: %s" % (" ".join(command))) 
     final_run_report.append("Began at: %s." % (start_time.isoformat(' ')))
     final_run_report.append("Ended at: %s." % (end_time.isoformat(' ')))
     hours, mins, secs = str(end_time-start_time).split(":")
