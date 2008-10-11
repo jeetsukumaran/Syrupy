@@ -33,7 +33,7 @@ import sys
 import os
 import subprocess
 
-version = "1.0.0"
+version = "1.0.1"
 
 setup(name='Syrupy',
       version=version,     
