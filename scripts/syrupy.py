@@ -334,12 +334,11 @@ def profile_command(command,
             flush_output=flush_output,
             debug_level=debug_level)
         end_time = datetime.datetime.now()
-    except OSError, oserror:
-        if oserror.errno == 2:
-            sys.stderr.write("Failed to execute command: %s\n" % command)
-            sys.exit(1)
-    return start_time, end_time
-
+        return start_time, end_time
+    except:
+        sys.stderr.write("Failed to execute command: %s\n" % command)
+        sys.exit(1)
+            
 def open_file(fpath, mode='r', replace=False, exit_on_fail=True):
     """
     Does idiot-checked file opening.
