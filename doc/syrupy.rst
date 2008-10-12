@@ -26,7 +26,7 @@ Downloading
 
 The entire Syrupy package can be downloaded as a single archive here:
 
-    http://www.jeetworks.org/files/downloads/Syrupy-1.1.0.tar.gz
+    http://www.jeetworks.org/files/downloads/Syrupy-1.1.1.tar.gz
 
 If you have Git installed on your system, you can clone your own copy of the repository by entering::
 
