@@ -135,7 +135,7 @@ def poll_process(pid=None,
         stdout=subprocess.PIPE)
     poll_time = datetime.datetime.now()
     stdout = ps.communicate()[0]
-    
+
     if debug_level >= 9:
         sys.stderr.write(stdout + "\n")
 
@@ -144,8 +144,8 @@ def poll_process(pid=None,
         if row:
             fields = re.split("\s+", row.strip(), non_command_cols)
             if debug_level >= 5:
-                sys.stderr.write(str(fields) + "\n")            
-#             
+                sys.stderr.write(str(fields) + "\n")
+#
 #             if row.count("Python"):
 #                 print
 #                 print non_command_cols
@@ -160,9 +160,9 @@ def poll_process(pid=None,
 #                 print "-------------------------------------------"
 #                 print command_pattern
 #                 print fields[-1]
-#                 print re.match(command_pattern, fields[-1])        
-#                 print "-------------------------------------------"            
-                
+#                 print re.match(command_pattern, fields[-1])
+#                 print "-------------------------------------------"
+
             if (not ignore_self or int(fields[0]) != os.getpid())  \
                 and (pid is None or int(fields[0]) == int(pid)) \
                 and (command_pattern is None or re.search(command_pattern, fields[-1])):
@@ -184,7 +184,7 @@ def profile_process(pid=None,
     quit_poll_func=None,
     quit_if_none=False,
     quit_at_time=None,
-    show_command=False,    
+    show_command=False,
     output_separator="  ",
     align=False,
     headers=True,
@@ -202,7 +202,7 @@ def profile_process(pid=None,
     does not exist and if `quit_if_none` is False, then will poll
     continuously until interupted by user.
     """
-    
+
     if pid is None and command_pattern is None:
         raise Exception("Must provide either PID or command pattern")
 
@@ -240,9 +240,9 @@ def profile_process(pid=None,
 
     if debug_level >= 1:
         result_fields.insert(0, "%%(ppid)%ss" % right_align)
-        
+
     if show_command:
-        result_fields.append("%(command)s")        
+        result_fields.append("%(command)s")
 
     col_headers = [
         "PID".rjust(mcolw),
@@ -257,10 +257,10 @@ def profile_process(pid=None,
 
     if debug_level >=1:
         col_headers.insert(0, "PPID".rjust(mcolw))
-        
+
     if show_command:
         col_headers.append("COMMAND")
-       
+
     if headers:
         if output is not None:
             output.write(output_separator.join(col_headers) + "\n")
@@ -270,11 +270,11 @@ def profile_process(pid=None,
             secondary_output.write(output_separator.join(col_headers) + "\n")
             if flush_output:
                 secondary_output.flush()
-                
-    quit = False                                    
-    while not quit:    
-        pinfoset = poll_process(pid=pid, 
-                                command_pattern=command_pattern, 
+
+    quit = False
+    while not quit:
+        pinfoset = poll_process(pid=pid,
+                                command_pattern=command_pattern,
                                 debug_level=debug_level)
         if debug_level > 4:
             sys.stderr.write(str(pinfoset) + "\n")
@@ -283,25 +283,25 @@ def profile_process(pid=None,
             if output is not None:
                 output.write(result + "\n")
                 if flush_output:
-                    output.flush()                
+                    output.flush()
             if secondary_output is not None:
-                secondary_output.write(result + "\n")  
+                secondary_output.write(result + "\n")
                 if flush_output:
                     secondary_output.flush()
         if quit_poll_func is not None and quit_poll_func():
             quit = True
         elif len(pinfoset) == 0 and quit_if_none:
             quit = True
-        else:            
-            time.sleep(poll_interval)                
-        
+        else:
+            time.sleep(poll_interval)
+
 def profile_command(command,
     command_stdout,
     command_stderr,
     output,
     poll_interval=1,
     output_separator=" ",
-    show_command=False,    
+    show_command=False,
     align=False,
     headers=True,
     secondary_output=None,
@@ -332,7 +332,7 @@ def profile_command(command,
             headers=headers,
             secondary_output=secondary_output,
             flush_output=flush_output,
-            debug_level=debug_level)        
+            debug_level=debug_level)
         end_time = datetime.datetime.now()
     except OSError, oserror:
         if oserror.errno == 2:
@@ -432,48 +432,58 @@ def main():
         default=False,
         help='show detailed information on the meaning of each of the columns, ' \
             +'and then exit')
-            
+
     prepped_opts = OptionGroup(parser, 'Pre-Rolled Option Suites', """\
 I sometimes find that I use particular combinations of options often, depending
-on the testing contexts. The following options set up these combinations at once. 
-Individual options within each combination can be fine-tuned by specifying the 
+on the testing contexts. The following options set up these combinations at once.
+Individual options within each combination can be fine-tuned by specifying the
 appropriate option separately.
         """
         )
-    parser.add_option_group(prepped_opts)        
-    
+    parser.add_option_group(prepped_opts)
+
     prepped_opts.add_option('-A', '--log-all',
         action='store_true',
         dest='log_all',
         default=False,
-        help='in addition to writing the data to the standard output, write it '
-            +'to the secondary stream along with the run time and other '
-            +'summary information, but instead of writing the secondary stream to'
-            +'standard error, write it to the file "COMMAND.ps.log" '
+        help='in addition to writing the data to the standard output, write it ' \
+            +'to the secondary stream along with the run time and other ' \
+            +'summary information, but instead of writing the secondary stream to' \
+            +'standard error, write it to the file "COMMAND.ps.log" ' \
             +'(equivalent to "--o2 --m2 -2 COMMAND.ps.log")')
-            
+
     prepped_opts.add_option('-B', '--all-in-back',
         action='store_true',
         dest='log_in_bg',
         default=False,
-        help='redirect Syrupy output and miscellaneous information to '
-            +'"COMMAND.ps.log" and "COMMAND.ps.etc" respectively, and '
-            +'redirect COMMAND output and COMMAND error streams to '
-            +'"COMMAND.out" and "COMMAND.err" respectively'
-            +'(equivalent to "--m2 -1 COMMAND.ps.log -2 COMMAND.ps.etc '
-            +'--stdout COMMAND.out --COMMAND.err")')           
-                                                                    
+        help='redirect Syrupy output and miscellaneous information to ' \
+            +'"COMMAND.ps.log" and "COMMAND.ps.etc" respectively, and ' \
+            +'redirect COMMAND output and COMMAND error streams to ' \
+            +'"COMMAND.out" and "COMMAND.err" respectively' \
+            +'(equivalent to "--m2 -1 COMMAND.ps.log -2 COMMAND.ps.etc ' \
+            +'--stdout COMMAND.out --COMMAND.err")')
+
     prepped_opts.add_option('-C', '--command-in-front',
         action='store_true',
         dest='command_in_fg',
         default=False,
-        help='run COMMAND in foreground: redirect the output and error stream of'
-            +' COMMAND to standard output and standard error, respectively, '
-            +'while sending Syrupy output and error streams to '
-            +'"COMMAND.ps.out" and "COMMAND.ps.etc" respectively '
-            +'(equivalent to "--m2 -1 COMMAND.ps.out -2 COMMAND.ps.etc --stdout ^1'
+        help='run COMMAND in foreground: redirect the output and error stream of' \
+            +' COMMAND to standard output and standard error, respectively, ' \
+            +'while sending Syrupy output and error streams to ' \
+            +'"COMMAND.ps.out" and "COMMAND.ps.etc" respectively ' \
+            +'(equivalent to "--m2 -1 COMMAND.ps.out -2 COMMAND.ps.etc --stdout ^1' \
             +'--stderr ^2")')
-                        
+
+    prepped_opts.add_option('-t', '--title',
+        action='store',
+        dest='title',
+        metavar="TITLE",
+        default=None,
+        help='if given, then "TITLE" replaces "COMMAND" in all the filenames of' \
+            +' the various files produced by the options above (e.g., ' \
+            +' "COMMAND.ps.out" becomes "TITLE.ps.out", "COMMAND.ps.log" becomes' \
+            +' "TITLE.ps.log" and so on)')
+
     process_opts = OptionGroup(parser, 'Process Selection', """\
 By default, Syrupy tracks the process resulting from executing
 COMMAND. You can also instruct Syrupy to track external
@@ -485,11 +495,11 @@ no processes matching all the criteria are found. If no
 processes matching all the criteria are actually already running
 when Syrupy starts, then Syrupy exits immediately. Note that an
 instance of Syrupy automatically excludes its own process from
-being tracked by itself.                
+being tracked by itself.
         """
         )
-    parser.add_option_group(process_opts)            
-    
+    parser.add_option_group(process_opts)
+
     process_opts.add_option('-p', '--poll-pid',
         action='store',
         dest='poll_pid',
@@ -497,15 +507,15 @@ being tracked by itself.
         metavar='PID',
         type=int,
         help='ignore COMMAND if given, and poll external process with ' \
-            +'specified PID')        
-            
+            +'specified PID')
+
     process_opts.add_option('-c', '--poll-command',
         action='store',
         dest='poll_command',
         default=None,
         metavar='REG-EXP',
         help='ignore COMMAND if given, and poll external process with ' \
-            +'command matching specified regular expression pattern')        
+            +'command matching specified regular expression pattern')
 
     polling_opts = OptionGroup(parser, 'Polling Regime')
     parser.add_option_group(polling_opts)
@@ -516,8 +526,8 @@ being tracked by itself.
         default=1,
         metavar='#.##',
         type=float,
-        help='polling interval in seconds(default=%default)')        
-                   
+        help='polling interval in seconds(default=%default)')
+
     soutput_opts = OptionGroup(parser, 'Syrupy Output Destination')
     parser.add_option_group(soutput_opts)
 
@@ -528,15 +538,15 @@ being tracked by itself.
         metavar="FILEPATH",
         help='write primary output (resource usage data) to FILEPATH instead ' \
             + 'of standard output')
-            
+
     soutput_opts.add_option('-1',
         action='store',
         dest='outputfile',
         default=None,
         metavar="FILEPATH",
         help='synonym for "-o" or "--output": write primary output (resource ' \
-            + 'usage data) to FILEPATH instead of standard output')            
-            
+            + 'usage data) to FILEPATH instead of standard output')
+
     soutput_opts.add_option('-2',
         action='store',
         dest='secondary_stream_file',
@@ -544,7 +554,7 @@ being tracked by itself.
         metavar="FILEPATH",
         help='write secondary stream information to this file instead of '
             + 'standard error')
-            
+
     soutput_opts.add_option('--o2',
         action='store_true',
         dest='output_to_secondary',
@@ -559,14 +569,14 @@ being tracked by itself.
         dest='miscellaneous_to_secondary',
         default=False,
         help='write miscellaneous run information (summary of times, etc.)'
-            +'to secondary stream')            
-            
+            +'to secondary stream')
+
     soutput_opts.add_option('--flush-output',
         action='store_true',
         dest='flush_output',
         default=False,
-        help='force flushing of stream buffers after every write')             
-                
+        help='force flushing of stream buffers after every write')
+
     coutput_opts = OptionGroup(parser,
         'Command Output Destination',
         """\
@@ -616,12 +626,12 @@ error"""
 
     formatting_opts = OptionGroup(parser, 'Output Formatting')
     parser.add_option_group(formatting_opts)
-    
+
     formatting_opts.add_option('--show-command',
         action='store_true',
         dest='show_command',
         default=False,
-        help='show command column in output' )    
+        help='show command column in output' )
 
     formatting_opts.add_option('--separator',
         action='store',
@@ -658,32 +668,35 @@ error"""
         parser.print_usage()
         sys.exit(1)
 
-    basecommand = os.path.splitext(os.path.basename(args[0]))[0]
+    if opts.title is None:
+        base_title = os.path.splitext(os.path.basename(args[0]))[0]
+    else:
+        base_title = opts.title
     if opts.log_all:
         if opts.secondary_stream_file is None:
-            opts.secondary_stream_file = basecommand + ".ps.log"
+            opts.secondary_stream_file = base_title + ".ps.log"
         opts.output_to_secondary = True
         opts.miscellaneous_to_secondary = True
     elif opts.log_in_bg:
         if opts.outputfile is None:
-            opts.outputfile = basecommand + ".ps.log"
-        if opts.secondary_stream_file is None:            
-            opts.secondary_stream_file = basecommand + ".ps.etc"
-        if opts.stdout == os.path.devnull:            
-            opts.stdout = basecommand + ".out"
-        if opts.stderr == os.path.devnull:            
-            opts.stderr = basecommand + ".err"
-        opts.miscellaneous_to_secondary = True        
+            opts.outputfile = base_title + ".ps.log"
+        if opts.secondary_stream_file is None:
+            opts.secondary_stream_file = base_title + ".ps.etc"
+        if opts.stdout == os.path.devnull:
+            opts.stdout = base_title + ".out"
+        if opts.stderr == os.path.devnull:
+            opts.stderr = base_title + ".err"
+        opts.miscellaneous_to_secondary = True
     elif opts.command_in_fg:
         if opts.outputfile is None:
-            opts.outputfile = basecommand + ".ps.log"
-        if opts.secondary_stream_file is None:            
-            opts.secondary_stream_file = basecommand + ".ps.etc"
-        if opts.stdout == os.path.devnull:            
+            opts.outputfile = base_title + ".ps.log"
+        if opts.secondary_stream_file is None:
+            opts.secondary_stream_file = base_title + ".ps.etc"
+        if opts.stdout == os.path.devnull:
             opts.stdout = "^1"
-        if opts.stderr == os.path.devnull:            
+        if opts.stderr == os.path.devnull:
             opts.stderr = "^2"
-        opts.miscellaneous_to_secondary = True  
+        opts.miscellaneous_to_secondary = True
 
     if opts.outputfile is not None:
         output = open_file(opts.outputfile, 'w', replace=opts.replace)
@@ -698,9 +711,9 @@ error"""
         secondary_output = secondary_stream
     else:
         secondary_output = None
-    
+
     if opts.poll_pid is not None or opts.poll_command is not None:
-        profile_process(pid=opts.poll_pid,            
+        profile_process(pid=opts.poll_pid,
             command_pattern=opts.poll_command,
             output=output,
             poll_interval=opts.poll_interval,
@@ -713,17 +726,17 @@ error"""
             headers=opts.headers,
             secondary_output=secondary_output,
             flush_output=opts.flush_output,
-            debug_level=opts.debug) 
-    else:        
+            debug_level=opts.debug)
+    else:
         command = args
         command_stdout = open_file(opts.stdout, 'w', replace=opts.replace)
-        command_stderr = open_file(opts.stderr, 'w', replace=opts.replace)    
+        command_stderr = open_file(opts.stderr, 'w', replace=opts.replace)
         start_time, end_time = profile_command(command=command,
             command_stdout=command_stdout,
             command_stderr=command_stderr,
             output=output,
             poll_interval=opts.poll_interval,
-            show_command=opts.show_command,            
+            show_command=opts.show_command,
             output_separator=opts.separator,
             align=opts.align,
             headers=opts.headers,
@@ -737,7 +750,7 @@ error"""
             final_run_report.append("Ended at: %s." % (end_time.isoformat(' ')))
             hours, mins, secs = str(end_time-start_time).split(":")
             run_time = "Run time: %s hour(s), %s minute(s), %s second(s)." % (hours, mins, secs)
-            final_run_report.append(run_time)        
+            final_run_report.append(run_time)
             report = "\n".join(final_run_report) + "\n"
             secondary_stream.write("---\n")
             secondary_stream.write(report)
