@@ -433,6 +433,47 @@ def main():
         help='show detailed information on the meaning of each of the columns, ' \
             +'and then exit')
             
+    prepped_opts = OptionGroup(parser, 'Pre-Rolled Option Suites', """\
+I sometimes find that I use particular combinations of options often, depending
+on the testing contexts. The following options set up these combinations at once. 
+Individual options within each combination can be fine-tuned by specifying the 
+appropriate option separately.
+        """
+        )
+    parser.add_option_group(prepped_opts)        
+    
+    prepped_opts.add_option('-A', '--log-all',
+        action='store_true',
+        dest='log_all',
+        default=False,
+        help='in addition to writing the data to the standard output, write it '
+            +'to the secondary stream along with the run time and other '
+            +'summary information, but instead of writing the secondary stream to'
+            +'standard error, write it to the file "COMMAND.ps.log" '
+            +'(equivalent to "--o2 --m2 -2 COMMAND.ps.log")')
+            
+    prepped_opts.add_option('-B', '--all-in-back',
+        action='store_true',
+        dest='log_in_bg',
+        default=False,
+        help='redirect Syrupy output and miscellaneous information to '
+            +'"COMMAND.ps.log" and "COMMAND.ps.etc" respectively, and '
+            +'redirect COMMAND output and COMMAND error streams to '
+            +'"COMMAND.out" and "COMMAND.err" respectively'
+            +'(equivalent to "--m2 -1 COMMAND.ps.log -2 COMMAND.ps.etc '
+            +'--stdout COMMAND.out --COMMAND.err")')           
+                                                                    
+    prepped_opts.add_option('-C', '--command-in-front',
+        action='store_true',
+        dest='command_in_fg',
+        default=False,
+        help='run COMMAND in foreground: redirect the output and error stream of'
+            +' COMMAND to standard output and standard error, respectively, '
+            +'while sending Syrupy output and error streams to '
+            +'"COMMAND.ps.out" and "COMMAND.ps.etc" respectively '
+            +'(equivalent to "--m2 -1 COMMAND.ps.out -2 COMMAND.ps.etc --stdout ^1'
+            +'--stderr ^2")')
+                        
     process_opts = OptionGroup(parser, 'Process Selection', """\
 By default, Syrupy tracks the process resulting from executing
 COMMAND. You can also instruct Syrupy to track external
@@ -475,7 +516,7 @@ being tracked by itself.
         default=1,
         metavar='#.##',
         type=float,
-        help='polling interval in seconds(default=%default)')
+        help='polling interval in seconds(default=%default)')        
                    
     soutput_opts = OptionGroup(parser, 'Syrupy Output Destination')
     parser.add_option_group(soutput_opts)
@@ -601,7 +642,6 @@ error"""
         default=True,
         help='do not output column headers' )
 
-
     # we need to do this to prevent options meant for COMMAND
     # being consumed by Syrupy
     parser.disable_interspersed_args()
@@ -617,6 +657,33 @@ error"""
         and opts.poll_command is None:
         parser.print_usage()
         sys.exit(1)
+
+    basecommand = os.path.splitext(os.path.basename(args[0]))[0]
+    if opts.log_all:
+        if opts.secondary_stream_file is None:
+            opts.secondary_stream_file = basecommand + ".ps.log"
+        opts.output_to_secondary = True
+        opts.miscellaneous_to_secondary = True
+    elif opts.log_in_bg:
+        if opts.outputfile is None:
+            opts.outputfile = basecommand + ".ps.log"
+        if opts.secondary_stream_file is None:            
+            opts.secondary_stream_file = basecommand + ".ps.etc"
+        if opts.stdout == os.path.devnull:            
+            opts.stdout = basecommand + ".out"
+        if opts.stderr == os.path.devnull:            
+            opts.stderr = basecommand + ".err"
+        opts.miscellaneous_to_secondary = True        
+    elif opts.command_in_fg:
+        if opts.outputfile is None:
+            opts.outputfile = basecommand + ".ps.log"
+        if opts.secondary_stream_file is None:            
+            opts.secondary_stream_file = basecommand + ".ps.etc"
+        if opts.stdout == os.path.devnull:            
+            opts.stdout = "^1"
+        if opts.stderr == os.path.devnull:            
+            opts.stderr = "^2"
+        opts.miscellaneous_to_secondary = True  
 
     if opts.outputfile is not None:
         output = open_file(opts.outputfile, 'w', replace=opts.replace)
