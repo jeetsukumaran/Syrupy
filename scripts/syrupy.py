@@ -44,6 +44,9 @@ PS_FIELDS = [
     'vsz',
 ]
 
+RSS_COL = PS_FIELDS.index('rss')
+VSZ_COL = PS_FIELDS.index('vsz')
+
 PS_FIELD_HELP = [
     ["PID",
     """
@@ -145,33 +148,17 @@ def poll_process(pid=None,
             fields = re.split("\s+", row.strip(), non_command_cols)
             if debug_level >= 5:
                 sys.stderr.write(str(fields) + "\n")
-#
-#             if row.count("Python"):
-#                 print
-#                 print non_command_cols
-#                 print len(fields)
-#                 print len(ps_fields)
-#                 print ps_invocation
-#                 print "###########################################"
-#                 print "*******************************************"
-#                 print fields
-#                 print "*******************************************"
-#                 print row
-#                 print "-------------------------------------------"
-#                 print command_pattern
-#                 print fields[-1]
-#                 print re.match(command_pattern, fields[-1])
-#                 print "-------------------------------------------"
-
-            if (not ignore_self or int(fields[0]) != os.getpid())  \
+        if (not ignore_self or int(fields[0]) != os.getpid())  \
                 and (pid is None or int(fields[0]) == int(pid)) \
                 and (command_pattern is None or re.search(command_pattern, fields[-1])):
                 pinfo = {}
                 for idx, field in enumerate(fields):
                     pinfo[ps_fields[idx]] = field
-                pinfo['poll_datetime'] = poll_time.isoformat(' ')
-                pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
-                pinfo['poll_time'] = poll_time.strftime("%H:%M:%S")
+#                 pinfo['poll_datetime'] = poll_time.isoformat(' ')
+#                 pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
+#                 pinfo['poll_time'] = poll_time.strftime("%H:%M:%S")                
+                    pinfo['poll_time'] = poll_time.strftime("%m-%d %H:%M:%S")
+                    pinfo['swap'] = int(fields[VSZ_COL]) - int(fields[RSS_COL])
                 records.append(pinfo)
                 if debug_level >= 4:
                     sys.stderr.write(str(pinfo) + "\n")
@@ -210,32 +197,30 @@ def profile_process(pid=None,
         ncolw = 5
         mcolw = 8
         wcolw = 11
+        vwcolw = 14
         right_align_narrow = "%d" % ncolw
         right_align = "%d" % mcolw
         right_align_wide = "%d" % wcolw
-        left_align_narrow = "-%d" % ncolw
-        left_align = "-%d" % mcolw
-        left_align_wide = "-%d" % wcolw
+        right_align_vwide = "%d" % vwcolw
     else:
         ncolw = 0
         mcolw = 0
         wcolw = 0
+        vwcolw = 16
         right_align_narrow = ""
         right_align = ""
         right_align_wide = ""
-        left_align_narrow = ""
-        left_align = ""
-        left_align_wide = ""
+        right_align_vwide = ""
 
     result_fields = [
         "%%(pid)%ss" % right_align,
-        "%%(poll_date)%ss" % right_align_wide,
-        "%%(poll_time)%ss" % right_align,
+        "%%(poll_time)%ss" % right_align_vwide,
         "%%(etime)%ss" % right_align_wide,
         "%%(%%cpu)%ss" % right_align_narrow,
         "%%(%%mem)%ss" % right_align_narrow,
         "%%(rss)%ss" % right_align,
         "%%(vsz)%ss" % right_align,
+        "%%(swap)%ss" % right_align,
     ]
 
     if debug_level >= 1:
@@ -246,13 +231,13 @@ def profile_process(pid=None,
 
     col_headers = [
         "PID".rjust(mcolw),
-        "DATE".rjust(wcolw),
-        "TIME".rjust(mcolw),
+        "TIME".rjust(vwcolw),
         "ELAPSED".rjust(wcolw),
         "CPU".rjust(ncolw),
         "MEM".rjust(ncolw),
         "RSS".rjust(mcolw),
-        "VSIZE".rjust(mcolw)
+        "VSIZE".rjust(mcolw),
+        "SWAP".rjust(mcolw)
     ]
 
     if debug_level >=1:
@@ -335,8 +320,9 @@ def profile_command(command,
             debug_level=debug_level)
         end_time = datetime.datetime.now()
         return start_time, end_time
-    except:
+    except Exception, e:
         sys.stderr.write("Failed to execute command: %s\n" % command)
+        raise e
         sys.exit(1)
             
 def open_file(fpath, mode='r', replace=False, exit_on_fail=True):
@@ -667,7 +653,7 @@ error"""
         parser.print_usage()
         sys.exit(1)
 
-    if opts.title is None:
+    if opts.title is None and len(args) > 0:
         base_title = os.path.splitext(os.path.basename(args[0]))[0]
     else:
         base_title = opts.title
