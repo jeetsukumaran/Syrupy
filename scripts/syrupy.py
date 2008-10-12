@@ -93,6 +93,7 @@ PS_FIELD_HELP = [
     process is currently using (in kiloBytes). This includes the amount
     in RAM (the resident set size) as well as the amount in swap."""
     ],
+
 ]
 
 def column_help(keyword_width=10, total_width=70):
@@ -154,11 +155,9 @@ def poll_process(pid=None,
                 pinfo = {}
                 for idx, field in enumerate(fields):
                     pinfo[ps_fields[idx]] = field
-#                 pinfo['poll_datetime'] = poll_time.isoformat(' ')
-#                 pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
-#                 pinfo['poll_time'] = poll_time.strftime("%H:%M:%S")                
-                    pinfo['poll_time'] = poll_time.strftime("%m-%d %H:%M:%S")
-                    pinfo['swap'] = int(fields[VSZ_COL]) - int(fields[RSS_COL])
+                pinfo['poll_datetime'] = poll_time.isoformat(' ')
+                pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
+                pinfo['poll_time'] = poll_time.strftime("%H:%M:%S")
                 records.append(pinfo)
                 if debug_level >= 4:
                     sys.stderr.write(str(pinfo) + "\n")
@@ -197,30 +196,32 @@ def profile_process(pid=None,
         ncolw = 5
         mcolw = 8
         wcolw = 11
-        vwcolw = 14
         right_align_narrow = "%d" % ncolw
         right_align = "%d" % mcolw
         right_align_wide = "%d" % wcolw
-        right_align_vwide = "%d" % vwcolw
+        left_align_narrow = "-%d" % ncolw
+        left_align = "-%d" % mcolw
+        left_align_wide = "-%d" % wcolw
     else:
         ncolw = 0
         mcolw = 0
         wcolw = 0
-        vwcolw = 16
         right_align_narrow = ""
         right_align = ""
         right_align_wide = ""
-        right_align_vwide = ""
+        left_align_narrow = ""
+        left_align = ""
+        left_align_wide = ""
 
     result_fields = [
         "%%(pid)%ss" % right_align,
-        "%%(poll_time)%ss" % right_align_vwide,
+        "%%(poll_date)%ss" % right_align_wide,
+        "%%(poll_time)%ss" % right_align,
         "%%(etime)%ss" % right_align_wide,
         "%%(%%cpu)%ss" % right_align_narrow,
         "%%(%%mem)%ss" % right_align_narrow,
         "%%(rss)%ss" % right_align,
         "%%(vsz)%ss" % right_align,
-        "%%(swap)%ss" % right_align,
     ]
 
     if debug_level >= 1:
@@ -231,13 +232,13 @@ def profile_process(pid=None,
 
     col_headers = [
         "PID".rjust(mcolw),
-        "TIME".rjust(vwcolw),
+        "DATE".rjust(wcolw),
+        "TIME".rjust(mcolw),
         "ELAPSED".rjust(wcolw),
         "CPU".rjust(ncolw),
         "MEM".rjust(ncolw),
         "RSS".rjust(mcolw),
-        "VSIZE".rjust(mcolw),
-        "SWAP".rjust(mcolw)
+        "VSIZE".rjust(mcolw)
     ]
 
     if debug_level >=1:
