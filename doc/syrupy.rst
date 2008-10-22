@@ -24,9 +24,9 @@ Apart from requiring "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)>`_" or somethi
 Downloading
 ===========
 
-The entire Syrupy package can be downloaded as a single archive here:
+The entire Syrupy package can be downloaded as a single archive from the SourceForge site:
 
-    http://www.jeetworks.org/files/downloads/Syrupy-1.1.1.tar.gz
+    https://sourceforge.net/project/platformdownload.php?group_id=242033
 
 If you have Git installed on your system, you can clone your own copy of the repository by entering::
 
@@ -95,13 +95,13 @@ Basic Output
     
 Given commands like the above, Syrupy will (if all is well) respond with writing something like the following to the standard output::
 
-     PID DATE        TIME     ELAPSED  CPU   MEM    RSS     SZ      VSZ
-   14634 2008-10-10  20:45:25   00:00  0.0   0.0   2996   1670     6680
-   14634 2008-10-10  20:45:26   00:01  105   0.2   7804   3148    12592
-   14634 2008-10-10  20:45:27   00:02  103   0.2   8996   3444    13776
-   14634 2008-10-10  20:45:28   00:03  103   0.2  10468   3837    15348
-   14634 2008-10-10  20:45:29   00:04  103   0.3  11412   4099    16396
-   14634 2008-10-10  20:45:30   00:05  104   0.3  12492   4361    17444
+     PID DATE        TIME     ELAPSED  CPU   MEM    RSS   VSIZE
+   14634 2008-10-10  20:45:25   00:00  0.0   0.0   2996    6680
+   14634 2008-10-10  20:45:26   00:01  105   0.2   7804   12592
+   14634 2008-10-10  20:45:27   00:02  103   0.2   8996   13776
+   14634 2008-10-10  20:45:28   00:03  103   0.2  10468   15348
+   14634 2008-10-10  20:45:29   00:04  103   0.3  11412   16396
+   14634 2008-10-10  20:45:30   00:05  104   0.3  12492   17444
    ...
    etc.
 
