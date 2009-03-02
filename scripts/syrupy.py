@@ -367,7 +367,7 @@ def open_file(fpath, mode='r', replace=False, exit_on_fail=True):
 
 _program_name = "Syrupy"
 _program_usage = '%prog [SYRUPY-OPTIONS] [COMMAND [COMMAND-OPTIONS] [COMMAND-ARGS]]'
-_program_version = '%s Version 1.1.1' % _program_name
+_program_version = '%s Version 1.1.2' % _program_name
 _program_description = """\
 System resource usage profiler: executes "COMMAND" with given
 options/arguments and tracks resulting process, or tracks other running
