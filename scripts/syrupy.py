@@ -464,7 +464,7 @@ appropriate option separately.
         action='store',
         dest='title',
         metavar="TITLE",
-        default=None,
+        default="process",
         help='if given, then "TITLE" replaces "COMMAND" in all the filenames of' \
             +' the various files produced by the options above (e.g., ' \
             +' "COMMAND.ps.out" becomes "TITLE.ps.out", "COMMAND.ps.log" becomes' \
