@@ -149,18 +149,18 @@ def poll_process(pid=None,
             fields = re.split("\s+", row.strip(), non_command_cols)
             if debug_level >= 5:
                 sys.stderr.write(str(fields) + "\n")
-        if (not ignore_self or int(fields[0]) != os.getpid())  \
-                and (pid is None or int(fields[0]) == int(pid)) \
-                and (command_pattern is None or re.search(command_pattern, fields[-1])):
-                pinfo = {}
-                for idx, field in enumerate(fields):
-                    pinfo[ps_fields[idx]] = field
-                pinfo['poll_datetime'] = poll_time.isoformat(' ')
-                pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
-                pinfo['poll_time'] = poll_time.strftime("%H:%M:%S")
-                records.append(pinfo)
-                if debug_level >= 4:
-                    sys.stderr.write(str(pinfo) + "\n")
+            if (not ignore_self or int(fields[0]) != os.getpid())  \
+                    and (pid is None or int(fields[0]) == int(pid)) \
+                    and (command_pattern is None or re.search(command_pattern, fields[-1])):
+                    pinfo = {}
+                    for idx, field in enumerate(fields):
+                        pinfo[ps_fields[idx]] = field
+                    pinfo['poll_datetime'] = poll_time.isoformat(' ')
+                    pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
+                    pinfo['poll_time'] = poll_time.strftime("%H:%M:%S")
+                    records.append(pinfo)
+                    if debug_level >= 4:
+                        sys.stderr.write(str(pinfo) + "\n")
     return records
 
 def profile_process(pid=None,
@@ -367,7 +367,7 @@ def open_file(fpath, mode='r', replace=False, exit_on_fail=True):
 
 _program_name = "Syrupy"
 _program_usage = '%prog [SYRUPY-OPTIONS] [COMMAND [COMMAND-OPTIONS] [COMMAND-ARGS]]'
-_program_version = '%s Version 1.1.3' % _program_name
+_program_version = '%s Version 1.1.4' % _program_name
 _program_description = """\
 System resource usage profiler: executes "COMMAND" with given
 options/arguments and tracks resulting process, or tracks other running
