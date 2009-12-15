@@ -109,6 +109,14 @@ def column_help(keyword_width=10, total_width=70):
             desc))
     return '\n'.join(help)
 
+def pretty_timestamp(t=None, style=0):
+    if t is None:
+        t = time.localtime()
+    if style == 0:
+        return time.strftime("%Y-%m-%d", t)
+    else:
+        return time.strftime("%Y%m%d%H%M%S", t)
+
 def poll_process(pid=None,
         command_pattern=None,
         ignore_self=True,
@@ -393,12 +401,14 @@ only options before COMMAND will be parsed by Syrupy; everything else
 will be passed to COMMAND.
 """
 _program_author = 'Jeet Sukumaran'
-_program_copyright = 'Copyright (C) 2008 Jeet Sukumaran.'
+_program_copyright = 'Copyright (C) 2009 Jeet Sukumaran.'
 
 def main():
     """
     Main CLI handler.
     """
+
+    default_title = "process_" + pretty_timestamp(style=1)
 
     parser = OptionParser(usage=_program_usage,
             add_help_option=True,
@@ -416,6 +426,13 @@ def main():
             dest='replace',
             default=False,
             help='replace output file(s) without asking if already exists')
+
+    parser.add_option('-t', '--title',
+            action='store',
+            dest='title',
+            metavar="PROCESS-TITLE",
+            default=default_title,
+            help="name for this run (will be used as stem name for all output files); defaults to 'process_<TIMESTAMP>'")
 
     parser.add_option('-v', '--debug-level',
             action='store',
@@ -448,40 +465,30 @@ appropriate option separately.
             help='in addition to writing the data to the standard output, write it ' \
                 +'to the secondary stream along with the run time and other ' \
                 +'summary information, but instead of writing the secondary stream to' \
-                +'standard error, write it to the file "COMMAND.ps.log" ' \
-                +'(equivalent to "--o2 --m2 -2 COMMAND.ps.log")')
+                +'standard error, write it to the file "PROCESS-TITLE.ps.log" ' \
+                +'(equivalent to "--o2 --m2 -2 PROCESS-TITLE.ps.log")')
 
     prepped_opts.add_option('-B', '--all-in-back',
             action='store_true',
             dest='log_in_bg',
             default=False,
             help='redirect Syrupy output and miscellaneous information to ' \
-                +'"COMMAND.ps.log" and "COMMAND.ps.etc" respectively, and ' \
+                +'"PROCESS-TITLE.ps.log" and "PROCESS-TITLE.ps.etc" respectively, and ' \
                 +'redirect COMMAND output and COMMAND error streams to ' \
-                +'"COMMAND.out" and "COMMAND.err" respectively' \
-                +'(equivalent to "--m2 -1 COMMAND.ps.log -2 COMMAND.ps.etc ' \
-                +'--stdout COMMAND.out --COMMAND.err")')
+                +'"PROCESS-TITLE.out" and "PROCESS-TITLE.err" respectively' \
+                +'(equivalent to "--m2 -1 PROCESS-TITLE.ps.log -2 PROCESS-TITLE.ps.etc ' \
+                +'--stdout PROCESS-TITLE.out --PROCESS-TITLE.err")')
 
     prepped_opts.add_option('-C', '--command-in-front',
             action='store_true',
             dest='command_in_fg',
             default=False,
-            help='run COMMAND in foreground: redirect the output and error stream of' \
-                +' COMMAND to standard output and standard error, respectively, ' \
+            help='run PROCESS-TITLE in foreground: redirect the output and error stream of' \
+                +' PROCESS-TITLE to standard output and standard error, respectively, ' \
                 +'while sending Syrupy output and error streams to ' \
-                +'"COMMAND.ps.out" and "COMMAND.ps.etc" respectively ' \
-                +'(equivalent to "--m2 -1 COMMAND.ps.out -2 COMMAND.ps.etc --stdout ^1' \
+                +'"PROCESS-TITLE.ps.out" and "PROCESS-TITLE.ps.etc" respectively ' \
+                +'(equivalent to "--m2 -1 PROCESS-TITLE.ps.out -2 PROCESS-TITLE.ps.etc --stdout ^1' \
                 +'--stderr ^2")')
-
-    prepped_opts.add_option('-t', '--title',
-            action='store',
-            dest='title',
-            metavar="TITLE",
-            default="process",
-            help='if given, then "TITLE" replaces "COMMAND" in all the filenames of' \
-                +' the various files produced by the options above (e.g., ' \
-                +' "COMMAND.ps.out" becomes "TITLE.ps.out", "COMMAND.ps.log" becomes' \
-                +' "TITLE.ps.log" and so on)')
 
     process_opts = OptionGroup(parser, 'Process Selection', """\
 By default, Syrupy tracks the process resulting from executing
