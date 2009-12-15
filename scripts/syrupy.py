@@ -160,12 +160,12 @@ def poll_process(pid=None,
         if not row:
             continue
         fields = re.split("\s+", row.strip(), non_command_cols)
+        if debug_level >= 5:
+            sys.stderr.write(str(fields) + "\n")
         if len(fields) != 8:
             #raise ValueError("Expecting 8 columns in output, but found %d: %s" % (len(fields), fields))
             sys.stderr.write("SYRUPY: Skipping sample: found only %d columns: %s" % (len(fields), fields))
             continue
-        if debug_level >= 5:
-            sys.stderr.write(str(fields) + "\n")
         if (not ignore_self or int(fields[0]) != os.getpid())  \
                 and (pid is None or int(fields[0]) == int(pid)) \
                 and (command_pattern is None or re.search(command_pattern, fields[-1])):
