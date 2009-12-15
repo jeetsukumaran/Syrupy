@@ -470,16 +470,12 @@ appropriate option separately.
                 +'standard error, write it to the file "PROCESS-TITLE.ps.log" ' \
                 +'(equivalent to "--o2 --m2 -2 PROCESS-TITLE.ps.log")')
 
-    prepped_opts.add_option('-B', '--all-in-back',
+    prepped_opts.add_option('-S', '--syrupy-in-front',
             action='store_true',
             dest='log_in_bg',
-            default=False,
+            default=True,
             help='redirect Syrupy output and miscellaneous information to ' \
-                +'"PROCESS-TITLE.ps.log" and "PROCESS-TITLE.ps.etc" respectively, and ' \
-                +'redirect COMMAND output and COMMAND error streams to ' \
-                +'"PROCESS-TITLE.out" and "PROCESS-TITLE.err" respectively' \
-                +'(equivalent to "--m2 -1 PROCESS-TITLE.ps.log -2 PROCESS-TITLE.ps.etc ' \
-                +'--stdout PROCESS-TITLE.out --PROCESS-TITLE.err")')
+                +'standard output and standard error instead of logging to files')
 
     prepped_opts.add_option('-C', '--command-in-front',
             action='store_true',
@@ -606,9 +602,9 @@ get a little confusing.
             default=os.path.devnull,
             metavar="FILEPATH",
             help="""\
-    Path to file to direct standard output of COMMAND
-    (default="%default"; use "^1" to specify current standard output
-    or "^2" to specify current standard error)"""
+path to file to direct standard output of COMMAND
+(default="%default"; use "^1" to specify current standard output
+or "^2" to specify current standard error)"""
             )
 
     coutput_opts.add_option('--stderr',
@@ -617,9 +613,9 @@ get a little confusing.
             default=os.path.devnull,
             metavar="FILEPATH",
             help="""\
-    Path to file to direct standard output of COMMAND
-    (default="%default"; use "^1" to specify current standard output
-    or "^2" to specify current standard error)"""
+path to file to direct standard output of COMMAND
+(default="%default"; use "^1" to specify current standard output
+or "^2" to specify current standard error)"""
             )
 
     coutput_opts.add_option('--debug-command',
@@ -627,9 +623,9 @@ get a little confusing.
             dest='stderr',
             const="^2",
             help="""\
-    This directs the error stream of COMMAND to the standard error (i.e.,
-    identical to "--stderr=^2"); useful to check if COMMAND is reporting an
-    error"""
+this directs the error stream of COMMAND to the standard error (i.e.,
+identical to "--stderr=^2"); useful to check if COMMAND is reporting an
+error"""
             )
 
     formatting_opts = OptionGroup(parser, 'Output Formatting')
