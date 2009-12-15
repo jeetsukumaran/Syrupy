@@ -2,7 +2,7 @@
 Introduction
 ============
 
-Syrupy is a Python script that regularly takes snapshots of the memory and CPU load of one or more running processes, so as to dynamically build up a profile 
+Syrupy is a Python script that regularly takes snapshots of the memory and CPU load of one or more running processes, so as to dynamically build up a profile
 of their usage of system resources.
 
 Syrupy works by one of two modes.
@@ -14,7 +14,7 @@ In either case, the monitoring of the system resource usage is based on repeated
 Prerequisites
 =============
 
-Given that Syrupy is ultimately nothing more than a glorifed wrapper and parser of "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)>`_" output, naturally the second-most important precondition for Syrupy to work on your system is to have the "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)>`_" command available (the first-most important is to have Python available). This is almost certainly true all POSIX or mostly POSIX-compliant systems, including various flavors of UNIX, Linux's, Apple Mac OS X's etc. 
+Given that Syrupy is ultimately nothing more than a glorifed wrapper and parser of "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)>`_" output, naturally the second-most important precondition for Syrupy to work on your system is to have the "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)>`_" command available (the first-most important is to have Python available). This is almost certainly true all POSIX or mostly POSIX-compliant systems, including various flavors of UNIX, Linux's, Apple Mac OS X's etc.
 
 Unless they happen to have a POSIX-compliant subsystem (such as Cygwin) installed, however, Microsoft Windows users are out of luck. Though that is hardly news.
 
@@ -31,40 +31,40 @@ The entire Syrupy package can be downloaded as a single archive from the SourceF
 If you have Git installed on your system, you can clone your own copy of the repository by entering::
 
     git clone http://jeetworks.org/files/repositories/syrupy.git
-    
-    
+
+
 Installing
 ==========
 
 As mentioned above, Syrupy is a self-contained single-module (single-file) executable script. So you do not even really need to "install" it as such: you can simply unpack the archive and use the script from wherever you end up saving it. Or you can copy it on the system path to be invoked globally. In fact, all the installation procedure does is automate the latter for you, and this can be carried out by entering the unpacked archive directory and typing::
 
     $ sudo python install
-    
+
 Usage
 =====
-    
+
 The discussion that follows highlights some of the main features of Syrupy, but full help and information on all options is readily available by entering::
 
     $ syrupy.py --help
-    
+
 Basic Invocation (Default Mode)
 -------------------------------
 
 In its default mode, Syrupy is invoked via the following syntax::
 
     $ syrupy.py [SYRUPY OPTIONS] COMMAND [COMMAND OPTIONS/ARGS]
-    
+
 In this context, "COMMAND [COMMAND OPTION/ARGS]" can be anything that you would normally invoke from a terminal, such as a program, executable, or interpretable script, with or without options and/or arguments::
 
     $ syrupy.py /usr/local/bin/program
     $ syrupy.py program.sh -o1 --opt2=foo -opt3="foo foo" /path/to/foo foo
-    $ syrupy.py find . -name "*.csv" 
+    $ syrupy.py find . -name "*.csv"
     $ syrupy.py python script.py -o1 -o2 foo "something pithy"
-    
+
 Basic Invocation (External Process Mode)
 ----------------------------------------
 
-In this mode, Syrupy will monitor one or more processes that are already running on the system based in user-specified criteria. 
+In this mode, Syrupy will monitor one or more processes that are already running on the system based in user-specified criteria.
 This mode is invoked by supplying values for one or more of the following options:
 
 * "``-p``" or "``--poll-pid``"
@@ -78,7 +78,7 @@ For example::
     $ syrupy.py --poll-pid=30011
     $ syrupy.py -c '[P|p]ython'
     $ syrupy.py --poll-command='.*java'
-    
+
 Note that you should protect the regular expression by quotes so as to avoid confusing the shell.
 
 If both options are given, then only processes that meet both the PID condition and the command regular expression will be monitored (obviously, as the PID condition will match at most one process, then specifying both options is at best redundant, and at worst will get you nothing).
@@ -87,13 +87,13 @@ As long as processes are found that meet the specified conditions, then Syrupy w
 When no processes are found meeting the conditions specified, then Syrupy will terminate.
 Note that if Syrupy starts up and does not find any processes matching the specified criteria, it will exit immediately.
 Thus it is important that the processes to be monitored (or, to be more precise, matching the specified criteria) be already running before invoking Syrupy.
-Each Syrupy instance automatically excludes itself when searching for processes matching a particular ID or command pattern: you cannot use an instance of Syrupy to monitor itself! 
+Each Syrupy instance automatically excludes itself when searching for processes matching a particular ID or command pattern: you cannot use an instance of Syrupy to monitor itself!
 However, you can use an instance of Syrupy to monitor another instance of the same program.
 
 Basic Output
 ------------
-    
-Given commands like the above, Syrupy will (if all is well) respond with writing something like the following to the standard output::
+
+Given commands like the above, Syrupy will (if all is well) respond with writing something like the following to its log file (or standard output if the '-S' flag is used)::
 
      PID DATE        TIME     ELAPSED  CPU   MEM    RSS   VSIZE
    14634 2008-10-10  20:45:25   00:00  0.0   0.0   2996    6680
@@ -112,7 +112,7 @@ Thus, over time Syrupy builds up a system resource usage profile of a particular
 The meaning of the various fields are given by entering the following::
 
     $ syrupy.py --explain
-    
+
 Which will tell you that::
 
     PID       Process IDentifier -- a number used by the operating system
@@ -122,7 +122,7 @@ Which will tell you that::
     TIME      The actual time, given as HOUR:MINUTE:SECOND
               that the process was polled.
     ELAPSED   The total time that the process had been running up to the
-              time it was polled.              
+              time it was polled.
     CPU       The CPU utilization of the process: CPU time used divided by
               the time the process has been running
               (cputime/realtime ratio), expressed as a
@@ -139,34 +139,25 @@ Which will tell you that::
               process is currently using (in kiloBytes). This
               includes the amount in RAM (the resident set size)
               as well as the amount in swap.
-              
-If you specify the "``show-command``" flag, then a final column will appear that presents the entire command string corresponding to the particular process.              
-                            
-Syrupy will continue taking and logging snapshots of the resource usage of the process or processes that it is monitoring until they terminate. 
 
-If you specify the "``--m2``" flag (the "write miscellaneous information to secondary [error] stream" flag), and Syrupy is running in its default mode (i.e., a COMMAND was invoked and tracked) after termination of the process Syrupy will usually produce a final report like::
+If you specify the "``show-command``" flag, then a final column will appear that presents the entire command string corresponding to the particular process.
 
-    ---
-     Command: sumtrees.py ansonia_combo.aligned.fasta.trees
-    Began at: 2008-10-10 20:45:25.453861.
-    Ended at: 2008-10-10 21:33:52.629728.
-    Run time: 0 hour(s), 48 minute(s), 27.175867 second(s).
-    ---
+Syrupy will continue taking and logging snapshots of the resource usage of the process or processes that it is monitoring until they terminate.
 
 Specifying Options to Syrupy: Position Counts!
 ----------------------------------------------
 
-Various options to Syrupy control, customize or change its default behavior. It is important to note that *all* options for Syrupy must be specified *before* the COMMAND and its options/arguments. Any and all arguments and options following the COMMAND will be passed directly to COMMAND and ignored by Syrupy. 
+Various options to Syrupy control, customize or change its default behavior. It is important to note that *all* options for Syrupy must be specified *before* the COMMAND and its options/arguments. Any and all arguments and options following the COMMAND will be passed directly to COMMAND and ignored by Syrupy.
 
 That is::
 
     $ syrupy.py --syrupy-opt1 --syrupy-opt2 /usr/local/bin/program
-    
+
 is correct, while::
 
-    $ syrupy.py --syrupy-opt1 /usr/local/bin/program --syrupy-opt2 
-    
-is wrong. In the second case, "``--syrupy-opt2``" will be passed to "``program``", which will result in unintended and probably undesirable behavior. 
+    $ syrupy.py --syrupy-opt1 /usr/local/bin/program --syrupy-opt2
+
+is wrong. In the second case, "``--syrupy-opt2``" will be passed to "``program``", which will result in unintended and probably undesirable behavior.
 
 Controlling the Polling Regime
 ------------------------------
@@ -176,61 +167,11 @@ Since the polling regime is pretty simple, there is only one option to control: 
     $ syrupy.py -i 0.001 /bin/program
     $ syrupy.py --polling-interval=0.001 /bin/program
     $ syrupy.py -i 60 /bin/program
-    $ syrupy.py --polling-interval=60 /bin/program    
+    $ syrupy.py --polling-interval=60 /bin/program
     etc.
-    
+
 Units are always in seconds, and thus the first two examples will sample the resource usage of "``/bin/program``" every 100th of a second, while the second two examples will sample the resource usage of "``/bin/program``" every minute.
 
-Controlling and Redirecting Output
-----------------------------------
- 
-By default, Syrupy will redirect both the output and and error streams of COMMAND to the system null device (typically, "``/dev/null``"), while writing its own results to the standard output stream (with miscellaneous information to the standard error stream). 
-This is simply the way I tend to want it to work when I am using it: I am usually running a program under it to assess the resource usage of the program, rather than being interested in the output of the program per se.
-Of course, the standard error of the program or command may actually be useful to see, especially if the program is not bug-free. 
-Also, sometimes the COMMAND may actually be a chained pipeline of scripts or programs, where the output of one is fed as the input of the other.
-In cases like these, it might be useful to actually have the output stream of COMMAND go to the standard output, and/or the error stream of COMMAND go to the standard error.
-This can be achieved by the following options::
-
-    $ syrupy.py --stdout=^1 --stderr=^2 /bin/program
-    
-"``^1``" and "``^2``" are special symbols that are interpreted by Syrupy to mean the standard output and standard error respectively.     
-
-If you do send the output stream of COMMAND to the standard output, you will probably find that this channel gets cluttered very quickly, as that is where, by default Syrupy writes *its* output. So you probably want to instruct Syrupy to write its own output elsewhere, using the "``-o``", "``--output``" or "``-1``" option (all these are synonyms for the channel which Syrupy will write its standard output)::
-
-    $ syrupy.py --output="program.run" --stdout=^1 /bin/program
-    $ syrupy.py -o="program.run" --stdout=^1 /bin/program
-    $ syrupy.py -1="program.run" --stdout=^1 /bin/program    
-
-Similarly, you can redirect the standard error stream of Syrupy using::
-
-    $ syrupy.py -2="syrupy.log" --stderr-^2 /bin/program
-    
-Of course, you can request Syrupy to redirect its streams to files without redirecting the streams of COMMAND anywhere in particular as well::
-
-    $ syrupy.py --output="program.run" -2="syrupy.log" /bin/program
-    $ syrupy.py -o="program.run" -2="syrupy.log" /bin/program    
-    $ syrupy.py -1="program.run" -2="syrupy.log" /bin/program    
-    
-You may also want to save the output and error stream of COMMAND, but not actually want to see them on the standard output. Then, instead of using the special symbols "``^1``" or "``^2``", you would simply supply proper file paths::
-
-    $ syrupy.py --stdout=cmd.out --stderr=cmd.err /bin/program
-    
-Another scenario is if you want to save the primary output of Syrupy to a file, but also have it displayed to the terminal as well. Using the "``--o2``" flag instructs Syrupy to write its primary output not only to the standard output stream (or file specified by the "``-o``", "``--output``" or "``-1``" options), but to the standard error (or file specified by the "``-2``" option)::
-
-    $ syrupy.py --o2 /bin/program
-        
-Finally, as a matter of convenience, you can use the "``--debug-command``" flag to have the error of COMMAND sent to the standard error::
-
-    $ syrupy.py --debug-command /bin/program
-    
-This is exactly the same as::
-
-    $ syrupy.py --stderr=^2 /bin/program
-        
-To summarize: the "``--stdout``" and "``--stderr``" options set the destinations for the standard output and standard error streams of COMMAND (and by default are set to "``/dev/null``"), while the "``-1``" and "``-2``" options set the destinations for the standard output and standard error streams of Syrupy (and by default are set to the the shell standard out and standard error).
-
-Of course, when COMMAND is not specified or is ignored, as in the external process monitoring mode, then the "``--stdout``" and "``--stderr``" options are ignored.
-        
 Formatting Output
 -----------------
 Syrupy's default output makes for easy visual inspection on a terminal or in a text editor.
@@ -272,4 +213,4 @@ This program is free software; you can redistribute it and/or modify it under th
 
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with this program. If not, see <http://www.gnu.org/licenses/>. 
+You should have received a copy of the GNU General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
