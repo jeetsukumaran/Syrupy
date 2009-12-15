@@ -110,9 +110,10 @@ def column_help(keyword_width=10, total_width=70):
     return '\n'.join(help)
 
 def poll_process(pid=None,
-    command_pattern=None,
-    ignore_self=True,
-    debug_level=0):
+        command_pattern=None,
+        ignore_self=True,
+        raw_output_log=None,
+        debug_level=0):
     """
     Calls ps, and extracts rows where command matches given command
     filter. If no filter is given, all rows are extracted.
@@ -143,6 +144,9 @@ def poll_process(pid=None,
     if debug_level >= 9:
         sys.stderr.write(stdout + "\n")
 
+    if raw_output_log is not None:
+        raw_output_log.write(stdout + "\n")
+
     records = []
     for row in stdout.split("\n"):
         if row:
@@ -164,19 +168,20 @@ def poll_process(pid=None,
     return records
 
 def profile_process(pid=None,
-    command_pattern=None,
-    output=None,
-    poll_interval=1,
-    quit_poll_func=None,
-    quit_if_none=False,
-    quit_at_time=None,
-    show_command=False,
-    output_separator="  ",
-    align=False,
-    headers=True,
-    secondary_output=None,
-    flush_output=False,
-    debug_level=0):
+        command_pattern=None,
+        output=None,
+        poll_interval=1,
+        quit_poll_func=None,
+        quit_if_none=False,
+        quit_at_time=None,
+        show_command=False,
+        output_separator="  ",
+        align=False,
+        headers=True,
+        secondary_output=None,
+        raw_output_log=None,
+        flush_output=False,
+        debug_level=0):
     """
     Will poll process with PID `pid` or with COMMAND matching
     `command_pattern` every `poll_interval` seconds, writing system
@@ -261,9 +266,12 @@ def profile_process(pid=None,
     while not quit:
         pinfoset = poll_process(pid=pid,
                                 command_pattern=command_pattern,
+                                raw_output_log=raw_output_log,
                                 debug_level=debug_level)
         if debug_level > 4:
             sys.stderr.write(str(pinfoset) + "\n")
+        if flush_output:
+            raw_output_log.flush()
         for pinfo in pinfoset:
             result = output_separator.join(result_fields) % pinfo
             if output is not None:
@@ -282,17 +290,18 @@ def profile_process(pid=None,
             time.sleep(poll_interval)
 
 def profile_command(command,
-    command_stdout,
-    command_stderr,
-    output,
-    poll_interval=1,
-    output_separator=" ",
-    show_command=False,
-    align=False,
-    headers=True,
-    secondary_output=None,
-    flush_output=False,
-    debug_level=0):
+        command_stdout,
+        command_stderr,
+        output,
+        poll_interval=1,
+        output_separator=" ",
+        show_command=False,
+        align=False,
+        headers=True,
+        secondary_output=None,
+        raw_output_log=None,
+        flush_output=False,
+        debug_level=0):
     """
     Executes command `command`, redirecting its output stream to `command_stdout`
     and error stream to `command_stderr`. Polls the resulting process every
@@ -302,30 +311,31 @@ def profile_command(command,
     try:
         start_time = datetime.datetime.now()
         proc = subprocess.Popen(command,
-            shell=False,
-            stdout=command_stdout,
-            stderr=command_stderr,
-            env=os.environ)
+                shell=False,
+                stdout=command_stdout,
+                stderr=command_stderr,
+                env=os.environ)
         profile_process(pid=proc.pid,
-            output=output,
-            poll_interval=poll_interval,
-            quit_poll_func=proc.poll,
-            quit_if_none=True,
-            quit_at_time=None,
-            show_command=show_command,
-            output_separator=output_separator,
-            align=align,
-            headers=headers,
-            secondary_output=secondary_output,
-            flush_output=flush_output,
-            debug_level=debug_level)
+                output=output,
+                poll_interval=poll_interval,
+                quit_poll_func=proc.poll,
+                quit_if_none=True,
+                quit_at_time=None,
+                show_command=show_command,
+                output_separator=output_separator,
+                align=align,
+                headers=headers,
+                secondary_output=secondary_output,
+                raw_output_log=raw_output_log,
+                flush_output=flush_output,
+                debug_level=debug_level)
         end_time = datetime.datetime.now()
         return start_time, end_time
     except Exception, e:
         sys.stderr.write("Failed to execute command: %s\n" % command)
         raise e
         sys.exit(1)
-            
+
 def open_file(fpath, mode='r', replace=False, exit_on_fail=True):
     """
     Does idiot-checked file opening.
@@ -367,7 +377,7 @@ def open_file(fpath, mode='r', replace=False, exit_on_fail=True):
 
 _program_name = "Syrupy"
 _program_usage = '%prog [SYRUPY-OPTIONS] [COMMAND [COMMAND-OPTIONS] [COMMAND-ARGS]]'
-_program_version = '%s Version 1.1.4' % _program_name
+_program_version = '%s Version 1.2' % _program_name
 _program_description = """\
 System resource usage profiler: executes "COMMAND" with given
 options/arguments and tracks resulting process, or tracks other running
@@ -388,36 +398,36 @@ def main():
     """
 
     parser = OptionParser(usage=_program_usage,
-        add_help_option=True,
-        version=_program_version,
-        description=_program_description)
+            add_help_option=True,
+            version=_program_version,
+            description=_program_description)
 
     parser.add_option('-q', '--quiet',
-        action='store_true',
-        dest='quiet',
-        default=False,
-        help='do not report miscellaneous run information to stderr')
+            action='store_true',
+            dest='quiet',
+            default=False,
+            help='do not report miscellaneous run information to stderr')
 
     parser.add_option('-r', '--replace',
-        action='store_true',
-        dest='replace',
-        default=False,
-        help='replace output file(s) without asking if already exists')
+            action='store_true',
+            dest='replace',
+            default=False,
+            help='replace output file(s) without asking if already exists')
 
     parser.add_option('-v', '--debug-level',
-        action='store',
-        type='int',
-        dest='debug',
-        metavar="#",
-        default=0,
-        help='debugging information level (0, 1, 2, 3; default=%default)')
+            action='store',
+            type='int',
+            dest='debug',
+            metavar="#",
+            default=0,
+            help='debugging information level (0, 1, 2, 3; default=%default)')
 
     parser.add_option('--explain',
-        action='store_true',
-        dest='explain',
-        default=False,
-        help='show detailed information on the meaning of each of the columns, ' \
-            +'and then exit')
+            action='store_true',
+            dest='explain',
+            default=False,
+            help='show detailed information on the meaning of each of the columns, ' \
+                +'and then exit')
 
     prepped_opts = OptionGroup(parser, 'Pre-Rolled Option Suites', """\
 I sometimes find that I use particular combinations of options often, depending
@@ -429,46 +439,46 @@ appropriate option separately.
     parser.add_option_group(prepped_opts)
 
     prepped_opts.add_option('-A', '--log-all',
-        action='store_true',
-        dest='log_all',
-        default=False,
-        help='in addition to writing the data to the standard output, write it ' \
-            +'to the secondary stream along with the run time and other ' \
-            +'summary information, but instead of writing the secondary stream to' \
-            +'standard error, write it to the file "COMMAND.ps.log" ' \
-            +'(equivalent to "--o2 --m2 -2 COMMAND.ps.log")')
+            action='store_true',
+            dest='log_all',
+            default=False,
+            help='in addition to writing the data to the standard output, write it ' \
+                +'to the secondary stream along with the run time and other ' \
+                +'summary information, but instead of writing the secondary stream to' \
+                +'standard error, write it to the file "COMMAND.ps.log" ' \
+                +'(equivalent to "--o2 --m2 -2 COMMAND.ps.log")')
 
     prepped_opts.add_option('-B', '--all-in-back',
-        action='store_true',
-        dest='log_in_bg',
-        default=False,
-        help='redirect Syrupy output and miscellaneous information to ' \
-            +'"COMMAND.ps.log" and "COMMAND.ps.etc" respectively, and ' \
-            +'redirect COMMAND output and COMMAND error streams to ' \
-            +'"COMMAND.out" and "COMMAND.err" respectively' \
-            +'(equivalent to "--m2 -1 COMMAND.ps.log -2 COMMAND.ps.etc ' \
-            +'--stdout COMMAND.out --COMMAND.err")')
+            action='store_true',
+            dest='log_in_bg',
+            default=False,
+            help='redirect Syrupy output and miscellaneous information to ' \
+                +'"COMMAND.ps.log" and "COMMAND.ps.etc" respectively, and ' \
+                +'redirect COMMAND output and COMMAND error streams to ' \
+                +'"COMMAND.out" and "COMMAND.err" respectively' \
+                +'(equivalent to "--m2 -1 COMMAND.ps.log -2 COMMAND.ps.etc ' \
+                +'--stdout COMMAND.out --COMMAND.err")')
 
     prepped_opts.add_option('-C', '--command-in-front',
-        action='store_true',
-        dest='command_in_fg',
-        default=False,
-        help='run COMMAND in foreground: redirect the output and error stream of' \
-            +' COMMAND to standard output and standard error, respectively, ' \
-            +'while sending Syrupy output and error streams to ' \
-            +'"COMMAND.ps.out" and "COMMAND.ps.etc" respectively ' \
-            +'(equivalent to "--m2 -1 COMMAND.ps.out -2 COMMAND.ps.etc --stdout ^1' \
-            +'--stderr ^2")')
+            action='store_true',
+            dest='command_in_fg',
+            default=False,
+            help='run COMMAND in foreground: redirect the output and error stream of' \
+                +' COMMAND to standard output and standard error, respectively, ' \
+                +'while sending Syrupy output and error streams to ' \
+                +'"COMMAND.ps.out" and "COMMAND.ps.etc" respectively ' \
+                +'(equivalent to "--m2 -1 COMMAND.ps.out -2 COMMAND.ps.etc --stdout ^1' \
+                +'--stderr ^2")')
 
     prepped_opts.add_option('-t', '--title',
-        action='store',
-        dest='title',
-        metavar="TITLE",
-        default="process",
-        help='if given, then "TITLE" replaces "COMMAND" in all the filenames of' \
-            +' the various files produced by the options above (e.g., ' \
-            +' "COMMAND.ps.out" becomes "TITLE.ps.out", "COMMAND.ps.log" becomes' \
-            +' "TITLE.ps.log" and so on)')
+            action='store',
+            dest='title',
+            metavar="TITLE",
+            default="process",
+            help='if given, then "TITLE" replaces "COMMAND" in all the filenames of' \
+                +' the various files produced by the options above (e.g., ' \
+                +' "COMMAND.ps.out" becomes "TITLE.ps.out", "COMMAND.ps.log" becomes' \
+                +' "TITLE.ps.log" and so on)')
 
     process_opts = OptionGroup(parser, 'Process Selection', """\
 By default, Syrupy tracks the process resulting from executing
@@ -487,81 +497,81 @@ being tracked by itself.
     parser.add_option_group(process_opts)
 
     process_opts.add_option('-p', '--poll-pid',
-        action='store',
-        dest='poll_pid',
-        default=None,
-        metavar='PID',
-        type=int,
-        help='ignore COMMAND if given, and poll external process with ' \
-            +'specified PID')
+            action='store',
+            dest='poll_pid',
+            default=None,
+            metavar='PID',
+            type=int,
+            help='ignore COMMAND if given, and poll external process with ' \
+                +'specified PID')
 
     process_opts.add_option('-c', '--poll-command',
-        action='store',
-        dest='poll_command',
-        default=None,
-        metavar='REG-EXP',
-        help='ignore COMMAND if given, and poll external process with ' \
-            +'command matching specified regular expression pattern')
+            action='store',
+            dest='poll_command',
+            default=None,
+            metavar='REG-EXP',
+            help='ignore COMMAND if given, and poll external process with ' \
+                +'command matching specified regular expression pattern')
 
     polling_opts = OptionGroup(parser, 'Polling Regime')
     parser.add_option_group(polling_opts)
 
     polling_opts.add_option('-i', '--interval',
-        action='store',
-        dest='poll_interval',
-        default=1,
-        metavar='#.##',
-        type=float,
-        help='polling interval in seconds(default=%default)')
+            action='store',
+            dest='poll_interval',
+            default=1,
+            metavar='#.##',
+            type=float,
+            help='polling interval in seconds(default=%default)')
 
     soutput_opts = OptionGroup(parser, 'Syrupy Output Destination')
     parser.add_option_group(soutput_opts)
 
     soutput_opts.add_option('-o', '--output',
-        action='store',
-        dest='outputfile',
-        default=None,
-        metavar="FILEPATH",
-        help='write primary output (resource usage data) to FILEPATH instead ' \
-            + 'of standard output')
+            action='store',
+            dest='outputfile',
+            default=None,
+            metavar="FILEPATH",
+            help='write primary output (resource usage data) to FILEPATH instead ' \
+                + 'of standard output')
 
     soutput_opts.add_option('-1',
-        action='store',
-        dest='outputfile',
-        default=None,
-        metavar="FILEPATH",
-        help='synonym for "-o" or "--output": write primary output (resource ' \
-            + 'usage data) to FILEPATH instead of standard output')
+            action='store',
+            dest='outputfile',
+            default=None,
+            metavar="FILEPATH",
+            help='synonym for "-o" or "--output": write primary output (resource ' \
+                + 'usage data) to FILEPATH instead of standard output')
 
     soutput_opts.add_option('-2',
-        action='store',
-        dest='secondary_stream_file',
-        default=None,
-        metavar="FILEPATH",
-        help='write secondary stream information to this file instead of '
-            + 'standard error')
+            action='store',
+            dest='secondary_stream_file',
+            default=None,
+            metavar="FILEPATH",
+            help='write secondary stream information to this file instead of '
+                + 'standard error')
 
     soutput_opts.add_option('--o2',
-        action='store_true',
-        dest='output_to_secondary',
-        default=False,
-        help='also write primary output to secondary stream (error stream)'
-            +'(this is useful if you are saving or redirecting the standard'
-            +' output to a file, but still want to see the results on the '
-            +' terminal, or vice versa')
+            action='store_true',
+            dest='output_to_secondary',
+            default=False,
+            help='also write primary output to secondary stream (error stream)'
+                +'(this is useful if you are saving or redirecting the standard'
+                +' output to a file, but still want to see the results on the '
+                +' terminal, or vice versa')
 
     soutput_opts.add_option('--m2',
-        action='store_true',
-        dest='miscellaneous_to_secondary',
-        default=False,
-        help='write miscellaneous run information (summary of times, etc.)'
-            +'to secondary stream')
+            action='store_true',
+            dest='miscellaneous_to_secondary',
+            default=False,
+            help='write miscellaneous run information (summary of times, etc.)'
+                +'to secondary stream')
 
     soutput_opts.add_option('--flush-output',
-        action='store_true',
-        dest='flush_output',
-        default=False,
-        help='force flushing of stream buffers after every write')
+            action='store_true',
+            dest='flush_output',
+            default=False,
+            help='force flushing of stream buffers after every write')
 
     coutput_opts = OptionGroup(parser,
         'Command Output Destination',
@@ -579,64 +589,64 @@ get a little confusing.
     parser.add_option_group(coutput_opts)
 
     coutput_opts.add_option('--stdout',
-        action='store',
-        dest='stdout',
-        default=os.path.devnull,
-        metavar="FILEPATH",
-        help="""\
-path to file to direct standard output of COMMAND
-(default="%default"; use "^1" to specify current standard output
-or "^2" to specify current standard error)"""
-        )
+            action='store',
+            dest='stdout',
+            default=os.path.devnull,
+            metavar="FILEPATH",
+            help="""\
+    Path to file to direct standard output of COMMAND
+    (default="%default"; use "^1" to specify current standard output
+    or "^2" to specify current standard error)"""
+            )
 
     coutput_opts.add_option('--stderr',
-        action='store',
-        dest='stderr',
-        default=os.path.devnull,
-        metavar="FILEPATH",
-        help="""\
-path to file to direct standard output of COMMAND
-(default="%default"; use "^1" to specify current standard output
-or "^2" to specify current standard error)"""
-        )
+            action='store',
+            dest='stderr',
+            default=os.path.devnull,
+            metavar="FILEPATH",
+            help="""\
+    Path to file to direct standard output of COMMAND
+    (default="%default"; use "^1" to specify current standard output
+    or "^2" to specify current standard error)"""
+            )
 
     coutput_opts.add_option('--debug-command',
-        action='store_const',
-        dest='stderr',
-        const="^2",
-        help="""\
-This directs the error stream of COMMAND to the standard error (i.e.,
-identical to "--stderr=^2"); useful to check if COMMAND is reporting an
-error"""
-        )
+            action='store_const',
+            dest='stderr',
+            const="^2",
+            help="""\
+    This directs the error stream of COMMAND to the standard error (i.e.,
+    identical to "--stderr=^2"); useful to check if COMMAND is reporting an
+    error"""
+            )
 
     formatting_opts = OptionGroup(parser, 'Output Formatting')
     parser.add_option_group(formatting_opts)
 
     formatting_opts.add_option('--show-command',
-        action='store_true',
-        dest='show_command',
-        default=False,
-        help='show command column in output' )
+            action='store_true',
+            dest='show_command',
+            default=False,
+            help='show command column in output' )
 
     formatting_opts.add_option('--separator',
-        action='store',
-        dest='separator',
-        default="  ",
-        metavar="SEPARATOR",
-        help='character(s) to used to separate columns in results' )
+            action='store',
+            dest='separator',
+            default="  ",
+            metavar="SEPARATOR",
+            help='character(s) to used to separate columns in results' )
 
     formatting_opts.add_option('--no-align',
-        action='store_false',
-        dest='align',
-        default=True,
-        help='do not align/justify columns' )
+            action='store_false',
+            dest='align',
+            default=True,
+            help='do not align/justify columns' )
 
     formatting_opts.add_option('--no-headers',
-        action='store_false',
-        dest='headers',
-        default=True,
-        help='do not output column headers' )
+            action='store_false',
+            dest='headers',
+            default=True,
+            help='do not output column headers' )
 
     # we need to do this to prevent options meant for COMMAND
     # being consumed by Syrupy
@@ -658,6 +668,7 @@ error"""
         base_title = os.path.splitext(os.path.basename(args[0]))[0]
     else:
         base_title = opts.title
+    raw_output_log = open_file(base_title + ".ps.raw", "w", replace=opts.replace)
     if opts.log_all:
         if opts.secondary_stream_file is None:
             opts.secondary_stream_file = base_title + ".ps.log"
@@ -700,47 +711,49 @@ error"""
 
     if opts.poll_pid is not None or opts.poll_command is not None:
         profile_process(pid=opts.poll_pid,
-            command_pattern=opts.poll_command,
-            output=output,
-            poll_interval=opts.poll_interval,
-            quit_poll_func=None,
-            quit_if_none=True,
-            quit_at_time=None,
-            show_command=opts.show_command,
-            output_separator=opts.separator,
-            align=opts.align,
-            headers=opts.headers,
-            secondary_output=secondary_output,
-            flush_output=opts.flush_output,
-            debug_level=opts.debug)
+                command_pattern=opts.poll_command,
+                output=output,
+                poll_interval=opts.poll_interval,
+                quit_poll_func=None,
+                quit_if_none=True,
+                quit_at_time=None,
+                show_command=opts.show_command,
+                output_separator=opts.separator,
+                align=opts.align,
+                headers=opts.headers,
+                secondary_output=secondary_output,
+                flush_output=opts.flush_output,
+                raw_output_log=raw_output_log,
+                debug_level=opts.debug)
     else:
         command = args
         command_stdout = open_file(opts.stdout, 'w', replace=opts.replace)
         command_stderr = open_file(opts.stderr, 'w', replace=opts.replace)
         start_time, end_time = profile_command(command=command,
-            command_stdout=command_stdout,
-            command_stderr=command_stderr,
-            output=output,
-            poll_interval=opts.poll_interval,
-            show_command=opts.show_command,
-            output_separator=opts.separator,
-            align=opts.align,
-            headers=opts.headers,
-            secondary_output=secondary_output,
-            flush_output=opts.flush_output,
-            debug_level=opts.debug)
+                command_stdout=command_stdout,
+                command_stderr=command_stderr,
+                output=output,
+                poll_interval=opts.poll_interval,
+                show_command=opts.show_command,
+                output_separator=opts.separator,
+                align=opts.align,
+                headers=opts.headers,
+                secondary_output=secondary_output,
+                raw_output_log=raw_output_log,
+                flush_output=opts.flush_output,
+                debug_level=opts.debug)
         if opts.miscellaneous_to_secondary:
-            final_run_report = []
-            final_run_report.append(" Command: %s" % (" ".join(command)))
-            final_run_report.append("Began at: %s." % (start_time.isoformat(' ')))
-            final_run_report.append("Ended at: %s." % (end_time.isoformat(' ')))
-            hours, mins, secs = str(end_time-start_time).split(":")
-            run_time = "Run time: %s hour(s), %s minute(s), %s second(s)." % (hours, mins, secs)
-            final_run_report.append(run_time)
-            report = "\n".join(final_run_report) + "\n"
-            secondary_stream.write("---\n")
-            secondary_stream.write(report)
-            secondary_stream.write("---\n")
+                final_run_report = []
+                final_run_report.append(" Command: %s" % (" ".join(command)))
+                final_run_report.append("Began at: %s." % (start_time.isoformat(' ')))
+                final_run_report.append("Ended at: %s." % (end_time.isoformat(' ')))
+                hours, mins, secs = str(end_time-start_time).split(":")
+                run_time = "Run time: %s hour(s), %s minute(s), %s second(s)." % (hours, mins, secs)
+                final_run_report.append(run_time)
+                report = "\n".join(final_run_report) + "\n"
+                secondary_stream.write("---\n")
+                secondary_stream.write(report)
+                secondary_stream.write("---\n")
 
 if __name__ == '__main__':
     main()
