@@ -149,22 +149,25 @@ def poll_process(pid=None,
 
     records = []
     for row in stdout.split("\n"):
-        if row:
-            fields = re.split("\s+", row.strip(), non_command_cols)
-            if debug_level >= 5:
-                sys.stderr.write(str(fields) + "\n")
-            if (not ignore_self or int(fields[0]) != os.getpid())  \
-                    and (pid is None or int(fields[0]) == int(pid)) \
-                    and (command_pattern is None or re.search(command_pattern, fields[-1])):
-                    pinfo = {}
-                    for idx, field in enumerate(fields):
-                        pinfo[ps_fields[idx]] = field
-                    pinfo['poll_datetime'] = poll_time.isoformat(' ')
-                    pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
-                    pinfo['poll_time'] = poll_time.strftime("%H:%M:%S")
-                    records.append(pinfo)
-                    if debug_level >= 4:
-                        sys.stderr.write(str(pinfo) + "\n")
+        if not row:
+            continue
+        fields = re.split("\s+", row.strip(), non_command_cols)
+        if len(fields) != 8:
+            raise ValueError("Expecting 8 columns in output, but found %d: %s" % (len(fields), fields))
+        if debug_level >= 5:
+            sys.stderr.write(str(fields) + "\n")
+        if (not ignore_self or int(fields[0]) != os.getpid())  \
+                and (pid is None or int(fields[0]) == int(pid)) \
+                and (command_pattern is None or re.search(command_pattern, fields[-1])):
+            pinfo = {}
+            for idx, field in enumerate(fields):
+                pinfo[ps_fields[idx]] = field
+            pinfo['poll_datetime'] = poll_time.isoformat(' ')
+            pinfo['poll_date'] = poll_time.strftime("%Y-%m-%d")
+            pinfo['poll_time'] = poll_time.strftime("%H:%M:%S")
+            records.append(pinfo)
+            if debug_level >= 4:
+                sys.stderr.write(str(pinfo) + "\n")
     return records
 
 def profile_process(pid=None,
