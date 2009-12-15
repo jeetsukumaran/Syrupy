@@ -577,14 +577,25 @@ standard output and standard error ('-C'), or suppress all COMMAND output altoge
     if opts.syrupy_in_front:
         syrupy_output = sys.stdout
     else:
-        syrupy_output = open_file(base_title + ".ps.log", "w", replace=opts.replace)
+        fname = base_title + ".ps.log"
+        if not opts.quiet:
+            sys.stderr.write("SYRUPY: Writing process resource usage samples to '%s'\n" % fname)
+        syrupy_output = open_file(fname, "w", replace=opts.replace)
 
     if opts.suppress_raw_process_log:
         raw_ps_log = None
     else:
+        fname = base_title + ".ps.raw"
+        if not opts.quiet:
+            sys.stderr.write("SYRUPY: Writing raw process resource usage logs to '%s'\n" % fname)
         raw_ps_log = open_file(base_title + ".ps.raw", "w", replace=opts.replace)
 
     if opts.poll_pid is not None or opts.poll_command is not None:
+        if not opts.quiet:
+            if opts.poll_pid is not None:
+                sys.stderr("SYRUPY: sampling process %d\n" % opts.poll_pid)
+            else:
+                sys.stderr("SYRUPY: sampling process with command pattern '%s'\n" % opts.poll_command)
         profile_process(pid=opts.poll_pid,
                 command_pattern=opts.poll_command,
                 syrupy_output=syrupy_output,
@@ -604,12 +615,20 @@ standard output and standard error ('-C'), or suppress all COMMAND output altoge
         if opts.suppress_command_output:
             command_stdout = open(os.devnull, "w")
             command_stderr = open(os.devnull, "w")
+            if not opts.quiet:
+                sys.stderr.write("SYRUPY: Suppressing output of command\n")
         elif opts.command_in_front:
             command_stdout = sys.stdout
             command_stderr = sys.stderr
         else:
-            command_stdout = open_file(base_title + ".out.log", 'w', replace=opts.replace)
-            command_stderr = open_file(base_title + ".err.log", 'w', replace=opts.replace)
+            cout = base_title + ".out.log"
+            cerr = base_title + ".err.log"
+            if not opts.quiet:
+                sys.stderr.write("SYRUPY: Redirecting COMMAND output stream to '%s'\n" % cout)
+            command_stdout = open_file(cout, 'w', replace=opts.replace)
+            if not opts.quiet:
+                sys.stderr.write("SYRUPY: Redirecting COMMAND error stream to '%s'\n" % cerr)
+            command_stderr = open_file(cerr, 'w', replace=opts.replace)
         start_time, end_time = profile_command(command=command,
                 command_stdout=command_stdout,
                 command_stderr=command_stderr,
