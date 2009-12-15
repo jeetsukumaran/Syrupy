@@ -593,9 +593,9 @@ standard output and standard error ('-C'), or suppress all COMMAND output altoge
     if opts.poll_pid is not None or opts.poll_command is not None:
         if not opts.quiet:
             if opts.poll_pid is not None:
-                sys.stderr("SYRUPY: sampling process %d\n" % opts.poll_pid)
+                sys.stderr.write("SYRUPY: sampling process %d\n" % opts.poll_pid)
             else:
-                sys.stderr("SYRUPY: sampling process with command pattern '%s'\n" % opts.poll_command)
+                sys.stderr.write("SYRUPY: sampling process with command pattern '%s'\n" % opts.poll_command)
         profile_process(pid=opts.poll_pid,
                 command_pattern=opts.poll_command,
                 syrupy_output=syrupy_output,
@@ -612,6 +612,8 @@ standard output and standard error ('-C'), or suppress all COMMAND output altoge
                 debug_level=opts.debug)
     else:
         command = args
+        if not opts.quiet:
+            sys.stderr.write("SYRUPY: Executing command '%s'\n" % (" ".join(command)))
         if opts.suppress_command_output:
             command_stdout = open(os.devnull, "w")
             command_stderr = open(os.devnull, "w")
@@ -624,10 +626,10 @@ standard output and standard error ('-C'), or suppress all COMMAND output altoge
             cout = base_title + ".out.log"
             cerr = base_title + ".err.log"
             if not opts.quiet:
-                sys.stderr.write("SYRUPY: Redirecting COMMAND output stream to '%s'\n" % cout)
+                sys.stderr.write("SYRUPY: Redirecting command output stream to '%s'\n" % cout)
             command_stdout = open_file(cout, 'w', replace=opts.replace)
             if not opts.quiet:
-                sys.stderr.write("SYRUPY: Redirecting COMMAND error stream to '%s'\n" % cerr)
+                sys.stderr.write("SYRUPY: Redirecting command error stream to '%s'\n" % cerr)
             command_stderr = open_file(cerr, 'w', replace=opts.replace)
         start_time, end_time = profile_command(command=command,
                 command_stdout=command_stdout,
@@ -642,18 +644,16 @@ standard output and standard error ('-C'), or suppress all COMMAND output altoge
                 flush_output=opts.flush_output,
                 debug_level=opts.debug)
 
-#        if opts.miscellaneous_to_secondary:
-#                final_run_report = []
-#                final_run_report.append(" Command: %s" % (" ".join(command)))
-#                final_run_report.append("Began at: %s." % (start_time.isoformat(' ')))
-#                final_run_report.append("Ended at: %s." % (end_time.isoformat(' ')))
-#                hours, mins, secs = str(end_time-start_time).split(":")
-#                run_time = "Run time: %s hour(s), %s minute(s), %s second(s)." % (hours, mins, secs)
-#                final_run_report.append(run_time)
-#                report = "\n".join(final_run_report) + "\n"
-#                secondary_stream.write("---\n")
-#                secondary_stream.write(report)
-#                secondary_stream.write("---\n")
+        if not opts.quiet:
+                final_run_report = []
+                final_run_report.append("SYRUPY: Completed running: %s" % (" ".join(command)))
+                final_run_report.append("SYRUPY: Started at %s" % (start_time.isoformat(' ')))
+                final_run_report.append("SYRUPY: Ended at %s" % (end_time.isoformat(' ')))
+                hours, mins, secs = str(end_time-start_time).split(":")
+                run_time = "SYRUPY: Total run time: %s hour(s), %s minute(s), %s second(s)" % (hours, mins, secs)
+                final_run_report.append(run_time)
+                report = "\n".join(final_run_report) + "\n"
+                sys.stderr.write(report)
 
 if __name__ == '__main__':
     main()
