@@ -33,10 +33,10 @@ import sys
 import os
 import subprocess
 
-version = "1.1.4"
+version = "1.3.0"
 
 setup(name='Syrupy',
-      version=version,     
+      version=version,
       author='Jeet Sukumaran',
       author_email='jeetsukumaran@gmail.com',
       description="""\
@@ -45,15 +45,15 @@ System resource usage profiler""",
       packages=[],
       package_dir={},
       package_data={},
-      scripts=['scripts/syrupy.py'],   
-      include_package_data=True,         
+      scripts=['scripts/syrupy.py'],
+      include_package_data=True,
       zip_safe=True,
       install_requires=[
           # -*- Extra requirements: -*-
       ],
       entry_points="""
       # -*- Entry points: -*-
-      """,      
+      """,
       long_description="""\
 System resource usage profiler: logs the CPU and
 memory usage of a process at pre-specified intervals.""",
@@ -65,5 +65,5 @@ memory usage of a process at pre-specified intervals.""",
             "Operating System :: OS Independent",
             "Programming Language :: Python",
             ],
-      keywords='profiler memory',      
+      keywords='profiler memory',
       )
