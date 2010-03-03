@@ -45,7 +45,7 @@ System resource usage profiler""",
       packages=[],
       package_dir={},
       package_data={},
-      scripts=['scripts/syrupy.py'],
+      scripts=['scripts/syrupy.py', 'scripts/syrupy-peak.py'],
       include_package_data=True,
       zip_safe=True,
       install_requires=[
