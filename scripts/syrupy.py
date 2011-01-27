@@ -278,7 +278,7 @@ def profile_process(pid=None,
                                 debug_level=debug_level)
         if debug_level > 4:
             sys.stderr.write(str(pinfoset) + "\n")
-        if flush_output:
+        if raw_ps_log is not None and flush_output:
             raw_ps_log.flush()
         for pinfo in pinfoset:
             result = output_separator.join(result_fields) % pinfo
