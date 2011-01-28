@@ -30,7 +30,7 @@ The entire Syrupy package can be downloaded as a single archive from the SourceF
 
 If you have Git installed on your system, you can clone your own copy of the repository by entering::
 
-    git clone http://jeetworks.org/files/repositories/syrupy.git
+    git clone https://github.com/jeetsukumaran/Syrupy
 
 
 Installing
