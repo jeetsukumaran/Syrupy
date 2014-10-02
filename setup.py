@@ -24,8 +24,6 @@
 Package setup and installation.
 """
 
-import ez_setup
-ez_setup.use_setuptools()
 from setuptools import setup
 from setuptools import find_packages
 

@@ -33,6 +33,10 @@ import sys
 import os
 import datetime
 import textwrap
+import locale
+
+ON_POSIX = 'posix' in sys.builtin_module_names
+ENCODING = locale.getdefaultlocale()[1]
 
 PS_FIELDS = [
     'pid',
@@ -147,7 +151,7 @@ def poll_process(pid=None,
         shell=True,
         stdout=subprocess.PIPE)
     poll_time = datetime.datetime.now()
-    stdout = ps.communicate()[0]
+    stdout, stderr = communicate(ps)
 
     if debug_level >= 9:
         sys.stderr.write(stdout + "\n")
@@ -293,6 +297,16 @@ def profile_process(pid=None,
         else:
             time.sleep(poll_interval)
 
+def communicate(p, commands=None):
+    if commands is not None:
+        commands = str.encode(commands)
+    stdout, stderr = p.communicate(commands)
+    if stdout is not None:
+        stdout = stdout.decode(ENCODING)
+    if stderr is not None:
+        stderr = stderr.decode(ENCODING)
+    return stdout, stderr
+
 def profile_command(command,
         command_stdout,
         command_stderr,
@@ -333,7 +347,7 @@ def profile_command(command,
                 debug_level=debug_level)
         end_time = datetime.datetime.now()
         return start_time, end_time
-    except Exception, e:
+    except Exception as e:
         sys.stderr.write("Failed to execute command: %s\n" % command)
         raise e
         sys.exit(1)
