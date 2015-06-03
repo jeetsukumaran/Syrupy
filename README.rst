@@ -10,16 +10,16 @@ Syrupy works by one of two modes.
 In the first (default) mode, it monitors the resource usage of a process resulting from the execution of a user-specified command (which can be any arbitrarily-complex combination of programs and arguments that can be invoked from a shell terminal).
 In the second mode, Syrupy monitors the resource usage of external running processes that meet user-specified criteria: a PID (Process IDentifier) number or a command string matching a regular expression pattern.
 
-In either case, the monitoring of the system resource usage is based on repeated calls to the system command "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)`_".
+In either case, the monitoring of the system resource usage is based on repeated calls to the system command "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)>`_".
 
 Prerequisites
 =============
 
-Given that Syrupy is ultimately nothing more than a glorifed wrapper and parser of "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)`_" output, naturally the second-most important precondition for Syrupy to work on your system is to have the "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)`_" command available (the first-most important is to have Python available). This is almost certainly true all POSIX or mostly POSIX-compliant systems, including various flavors of UNIX, Linux's, Apple Mac OS X's etc.
+Given that Syrupy is ultimately nothing more than a glorifed wrapper and parser of "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)>`_" output, naturally the second-most important precondition for Syrupy to work on your system is to have the "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)>`_" command available (the first-most important is to have Python available). This is almost certainly true all POSIX or mostly POSIX-compliant systems, including various flavors of UNIX, Linux's, Apple Mac OS X's etc.
 
 Unless they happen to have a POSIX-compliant subsystem (such as Cygwin) installed, however, Microsoft Windows users are out of luck. Though that is hardly news.
 
-Apart from requiring "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)`_" or something similar on your system (and, of course, Python), Syrupy has no other dependencies whatsoever: it is a single self-contained pure Python script and uses nothing but the standard Python libraries.
+Apart from requiring "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)>`_" or something similar on your system (and, of course, Python), Syrupy has no other dependencies whatsoever: it is a single self-contained pure Python script and uses nothing but the standard Python libraries.
 
 
 Downloading
