@@ -39,7 +39,7 @@ Installing
 
 As mentioned above, Syrupy is a self-contained single-module (single-file) executable script [as well as one additional optional helper script]. So you do not even really need to "install" it as such: you can simply unpack the archive and use the script from wherever you end up saving it. Or you can copy it on the system path to be invoked globally. In fact, all the installation procedure does is automate the latter for you, and this can be carried out by entering the unpacked archive directory and typing::
 
-    $ sudo python install
+    $ sudo python setup.py install
 
 Usage
 =====
