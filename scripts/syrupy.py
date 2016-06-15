@@ -616,7 +616,7 @@ standard output and standard error ('-C'), or suppress all COMMAND output altoge
                 raw_ps_log=raw_ps_log,
                 poll_interval=opts.poll_interval,
                 quit_poll_func=None,
-                quit_if_none=True,
+                quit_if_none=True if opts.poll_pid else False,
                 quit_at_time=None,
                 show_command=opts.show_command,
                 output_separator=opts.separator,
