@@ -97,7 +97,10 @@ PS_FIELD_HELP = [
     process is currently using (in kiloBytes). This includes the amount
     in RAM (the resident set size) as well as the amount in swap."""
     ],
-
+    ["CMD",
+     """
+	 Running process path and command line arguments."""
+     ],
 ]
 
 def column_help(keyword_width=10, total_width=70):
@@ -186,6 +189,7 @@ def poll_process(pid=None,
 
 def profile_process(pid=None,
         command_pattern=None,
+        top_mem=None,
         syrupy_output=None,
         raw_ps_log=None,
         poll_interval=1,
@@ -210,8 +214,8 @@ def profile_process(pid=None,
     continuously until interupted by user.
     """
 
-    if pid is None and command_pattern is None:
-        raise Exception("Must provide either PID or command pattern")
+    if pid is None and command_pattern is None and top_mem is None:
+        raise Exception("Must provide PID, command pattern or memory top")
 
     if align:
         ncolw = 5
@@ -243,6 +247,7 @@ def profile_process(pid=None,
         "%%(%%mem)%ss" % right_align_narrow,
         "%%(rss)%ss" % right_align,
         "%%(vsz)%ss" % right_align,
+        "%%(command)%ss" % right_align,
     ]
 
     if debug_level >= 1:
@@ -259,7 +264,8 @@ def profile_process(pid=None,
         "CPU".rjust(ncolw),
         "MEM".rjust(ncolw),
         "RSS".rjust(mcolw),
-        "VSIZE".rjust(mcolw)
+        "VSIZE".rjust(mcolw),
+        "CMD".rjust(mcolw),
     ]
 
     if debug_level >=1:
@@ -280,6 +286,10 @@ def profile_process(pid=None,
                                 command_pattern=command_pattern,
                                 raw_ps_log=raw_ps_log,
                                 debug_level=debug_level)
+
+        if top_mem is not None:
+            pinfoset = sorted(pinfoset, key=lambda v: int(v['vsz']), reverse=True)[:top_mem]
+
         if debug_level > 4:
             sys.stderr.write(str(pinfoset) + "\n")
         if raw_ps_log is not None and flush_output:
@@ -479,6 +489,14 @@ being tracked by itself.
             help='ignore COMMAND if given, and poll external process with ' \
                 +'specified PID')
 
+    process_opts.add_option('-m', '--poll-top-memory', '--mem',
+            action='store',
+            dest='poll_mem',
+            default=None,
+            metavar='MEM',
+            type=int,
+            help='ignore COMMAND if given and poll top MEM processes by memory usage')
+
     process_opts.add_option('-c', '--poll-command',
             action='store',
             dest='poll_command',
@@ -579,7 +597,8 @@ standard output and standard error ('-C'), or suppress all COMMAND output altoge
 
     if len(args) == 0 \
         and opts.poll_pid is None \
-        and opts.poll_command is None:
+        and opts.poll_command is None \
+        and opts.poll_mem is None:
         parser.print_usage()
         sys.exit(1)
 
@@ -604,14 +623,17 @@ standard output and standard error ('-C'), or suppress all COMMAND output altoge
             sys.stderr.write("SYRUPY: Writing raw process resource usage logs to '%s'\n" % fname)
         raw_ps_log = open_file(base_title + ".ps.raw", "w", replace=opts.replace)
 
-    if opts.poll_pid is not None or opts.poll_command is not None:
+    if opts.poll_pid is not None or opts.poll_command is not None or opts.poll_mem is not None:
         if not opts.quiet:
             if opts.poll_pid is not None:
                 sys.stderr.write("SYRUPY: sampling process %d\n" % opts.poll_pid)
+            elif opts.poll_mem is not None:
+                sys.stderr.write("SYRUPY: sampling top %d processes by memory usage\n" % opts.poll_mem)
             else:
                 sys.stderr.write("SYRUPY: sampling process with command pattern '%s'\n" % opts.poll_command)
         profile_process(pid=opts.poll_pid,
                 command_pattern=opts.poll_command,
+                top_mem=opts.poll_mem,
                 syrupy_output=syrupy_output,
                 raw_ps_log=raw_ps_log,
                 poll_interval=opts.poll_interval,

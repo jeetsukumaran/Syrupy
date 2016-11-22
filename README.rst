@@ -6,9 +6,10 @@ Introduction
 Syrupy is a Python script that regularly takes snapshots of the memory and CPU load of one or more running processes, so as to dynamically build up a profile
 of their usage of system resources.
 
-Syrupy works by one of two modes.
+Syrupy supports multiple modes.
 In the first (default) mode, it monitors the resource usage of a process resulting from the execution of a user-specified command (which can be any arbitrarily-complex combination of programs and arguments that can be invoked from a shell terminal).
 In the second mode, Syrupy monitors the resource usage of external running processes that meet user-specified criteria: a PID (Process IDentifier) number or a command string matching a regular expression pattern.
+In the third mode, Syrupy monitors top N processes by memory usage.
 
 In either case, the monitoring of the system resource usage is based on repeated calls to the system command "`ps <http://en.wikipedia.org/wiki/Ps_(Unix)>`_".
 
@@ -90,6 +91,14 @@ Note that if Syrupy starts up and does not find any processes matching the speci
 Thus it is important that the processes to be monitored (or, to be more precise, matching the specified criteria) be already running before invoking Syrupy.
 Each Syrupy instance automatically excludes itself when searching for processes matching a particular ID or command pattern: you cannot use an instance of Syrupy to monitor itself!
 However, you can use an instance of Syrupy to monitor another instance of the same program.
+
+Basic Invocation (Top Memory Usage Mode)
+----------------------------------------
+In this mode, Syrupy will monitor top N process by virtual memory consumption::
+
+    $ syrupy.py -m 5
+
+It will monitor 5 processes which consume most of virtual memory. When process free memory or stops - it will leave a monitoring list. If some process starts to consume more memory - it will appear in the monitoring list.
 
 Basic Output
 ------------
