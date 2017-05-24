@@ -126,6 +126,8 @@ def pretty_timestamp(t=None, style=0):
 
 def poll_process(pid=None,
         command_pattern=None,
+        ssh_id=None,
+        has_ssh=False,
         ignore_self=True,
         raw_ps_log=None,
         debug_level=0):
@@ -146,6 +148,10 @@ def poll_process(pid=None,
 
     ps_args = [ '-o %s=""' % s for s in ps_fields]
     ps_invocation = "ps -A %s" % (" ".join(ps_args))
+    
+    if has_ssh:
+        ssh_val = "ssh {0} ".format(ssh_id)
+        ps_invocation = ssh_val + ps_invocation
 
     if debug_level >= 3:
         sys.stderr.write("\n" + ps_invocation + "\n")
@@ -193,6 +199,8 @@ def profile_process(pid=None,
         syrupy_output=None,
         raw_ps_log=None,
         poll_interval=1,
+        ssh_id=None,
+        has_ssh=False,
         quit_poll_func=None,
         quit_if_none=False,
         quit_at_time=None,
@@ -284,6 +292,8 @@ def profile_process(pid=None,
     while not quit:
         pinfoset = poll_process(pid=pid,
                                 command_pattern=command_pattern,
+                                ssh_id=ssh_id,
+                                has_ssh=has_ssh,
                                 raw_ps_log=raw_ps_log,
                                 debug_level=debug_level)
 
@@ -489,6 +499,14 @@ being tracked by itself.
             help='ignore COMMAND if given, and poll external process with ' \
                 +'specified PID')
 
+    process_opts.add_option('-s', '--ssh',
+            action='store',
+            dest='ssh',
+            default=None,
+            metavar='SSH',
+            type=str,
+            help='use SSH to remote view PS with syrupy')
+
     process_opts.add_option('-m', '--poll-top-memory', '--mem',
             action='store',
             dest='poll_mem',
@@ -515,6 +533,7 @@ being tracked by itself.
             metavar='#.##',
             type=float,
             help='polling interval in seconds (default=%default)')
+
 
     run_output_opts = OptionGroup(parser, 'Output Modes', """\
 By default, Syrupy redirects the standard output and standard error of COMMAND, as well
@@ -638,6 +657,8 @@ standard output and standard error ('-C'), or suppress all COMMAND output altoge
                 raw_ps_log=raw_ps_log,
                 poll_interval=opts.poll_interval,
                 quit_poll_func=None,
+                ssh_id=opts.ssh,
+                has_ssh=True if opts.ssh else False,
                 quit_if_none=True if opts.poll_pid else False,
                 quit_at_time=None,
                 show_command=opts.show_command,
