@@ -161,7 +161,7 @@ def poll_process(pid=None,
         stdout=subprocess.PIPE)
     poll_time = datetime.datetime.now()
     stdout, stderr = communicate(ps)
-    stdout = stdout.encode('utf-8').strip()
+    stdout = stdout.strip()
 
     if debug_level >= 9:
         sys.stderr.write(stdout + "\n")
